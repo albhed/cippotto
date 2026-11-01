@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include "mem.h"
 
 int main(void) {
     SDL_Init(SDL_INIT_VIDEO);

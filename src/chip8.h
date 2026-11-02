@@ -13,10 +13,20 @@ typedef struct {
     uint8_t V[NUM_REGISTERS];
     uint16_t I;
     uint16_t PC;
+    uint16_t stack[16];
+    uint8_t SP;
 } Chip8;
+
+typedef struct {
+    uint16_t value;
+    int error;
+} StackPopResult;
 
 Chip8* init_chip8(void);
 void free_chip8(Chip8* chip8);
 int load_rom(Chip8* chip, const char* filepath);
+
+int stack_push(Chip8* chip, uint16_t value);
+StackPopResult* stack_pop(Chip8* chip);
 
 #endif /* CHIP8_H */

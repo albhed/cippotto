@@ -37,8 +37,8 @@ Chip8* init_chip8(void) {
     memset(chip8->V, 0, sizeof(chip8->V));
     chip8->I = 0;
     chip8->PC = PC_START;
+    chip8->SP = 0;
     memcpy(chip8->memory, fontset, 80);
-
 
     return chip8;
 }
@@ -82,4 +82,32 @@ void free_chip8(Chip8* chip8) {
         return;
     }
     free(chip8);
+}
+
+int stack_push(Chip8* chip, uint16_t value) {
+    if (chip->SP >= 16) {
+        printf("Error: Stack overflow\n");
+        return ERR_STACK_UNDERFLOW;
+    }
+    chip->stack[chip->SP] = value;
+    chip->SP++;
+    return 0;
+}
+
+StackPopResult* stack_pop(Chip8* chip) {
+    StackPopResult* result = (StackPopResult*)malloc(sizeof(StackPopResult));
+    if (result == NULL) {
+        printf("Error: Could not allocate memory for StackPopResult\n");
+        return NULL;
+    }
+
+    if (chip->SP == 0) {
+        result->error = ERR_STACK_UNDERFLOW;
+        return result;
+    }
+
+    chip->SP--;
+    result->value = chip->stack[chip->SP];
+    result->error = 0;
+    return result;
 }

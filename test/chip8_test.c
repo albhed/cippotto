@@ -83,6 +83,31 @@ void test_font(void) {
     free_chip8(chip8);
 }
 
+void test_stack_push_pop(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    for (uint16_t i = 0; i < 16; i++) {
+        int push_result = stack_push(chip8, i);
+        assert(push_result == 0);
+    }
+
+    for (int i = 15; i >= 0; i--) {
+        StackPopResult* pop_result = stack_pop(chip8);
+        assert(pop_result != NULL);
+        assert(pop_result->error == 0);
+        assert(pop_result->value == (uint16_t)i);
+        free(pop_result);
+    }
+
+    StackPopResult* pop_empty_result = stack_pop(chip8);
+    assert(pop_empty_result != NULL);
+    assert(pop_empty_result->error == ERR_STACK_UNDERFLOW);
+    free(pop_empty_result);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -94,6 +119,7 @@ int main(void) {
     test_large_rom();
     test_load_rom_ok();
     test_font();
+    test_stack_push_pop();
     printf("All tests passed!\n");
     return 0;
 }

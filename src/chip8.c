@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mem.h"
+#include "chip8.h"
 #include "err.h"
 
 const uint8_t fontset[80] = {
@@ -23,18 +23,27 @@ const uint8_t fontset[80] = {
     0xF0,0x80,0xF0,0x80,0x80  // F
 };
 
-Memory* init_memory(void) {
-    Memory* mem = (Memory*)malloc(sizeof(Memory));
-    if (mem == NULL) {
-        printf("Error: Could not allocate memory for Memory struct\n");
+Chip8* init_chip8(void) {
+    Chip8* chip8 = (Chip8*)malloc(sizeof(Chip8));
+    if (chip8 == NULL) {
+        printf("Error: Could not allocate memory for Chip8 struct\n");
         return NULL;
     }
-    memset(mem->data, 0, sizeof(mem->data));
-    memcpy(&mem->data[FONTSET_START], fontset, 80);
-    return mem;
+
+    for (size_t i = 0; i < sizeof(chip8->memory); i++) {
+        chip8->memory[i] = 0;
+    }
+
+    memset(chip8->V, 0, sizeof(chip8->V));
+    chip8->I = 0;
+    chip8->PC = PC_START;
+    memcpy(chip8->memory, fontset, 80);
+
+
+    return chip8;
 }
 
-int load_rom(Memory* mem, const char* filepath) {
+int load_rom(Chip8* chip, const char* filepath) {
     FILE *ptr = fopen(filepath, "rb");
 
     if (ptr == NULL) {
@@ -51,14 +60,14 @@ int load_rom(Memory* mem, const char* filepath) {
         return ERR_READING_ROM;
     }
 
-    if (file_size > sizeof(mem->data) - PC_START) {
+    if (file_size > sizeof(chip->memory) - PC_START) {
         printf("Error: ROM size exceeds available memory\n");
         fclose(ptr);
         return ERR_ROM_TOO_LARGE;
     }
     fseek(ptr, 0, SEEK_SET);
 
-    size_t byte_read = fread(&mem->data[PC_START], sizeof(uint8_t), sizeof(mem->data) - PC_START, ptr);
+    size_t byte_read = fread(&chip->memory[PC_START], sizeof(uint8_t), sizeof(chip->memory) - PC_START, ptr);
     if (byte_read != file_size) {
         printf("Error: Could not read the entire ROM file\n");
         fclose(ptr);
@@ -66,4 +75,11 @@ int load_rom(Memory* mem, const char* filepath) {
     }
     fclose(ptr);
     return 0;
+}
+
+void free_chip8(Chip8* chip8) {
+    if (chip8 == NULL) {
+        return;
+    }
+    free(chip8);
 }

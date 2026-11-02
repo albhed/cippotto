@@ -1,0 +1,99 @@
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "../src/chip8.h"
+#include "../src/err.h"
+
+extern const uint8_t fontset[80];
+
+void test_init_chip8_pc(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->PC == PC_START);
+    free_chip8(chip8);
+}
+
+void test_init_chip8_registers(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    for (int i = 0; i < 16; i++) {
+        assert(chip8->V[i] == 0);
+    }
+    free_chip8(chip8);
+}
+
+void test_init_chip8_index_register(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->I == 0);
+    free_chip8(chip8);
+}
+
+void test_init_chip8_memory_linked(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->memory != NULL);
+    assert(chip8->memory[FONTSET_START] == 0xF0);
+    free_chip8(chip8);
+}
+
+void test_mem_size(void) {
+    int expected_mem_size = 4096;
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(sizeof(chip8->memory) == expected_mem_size);
+}
+
+void test_pc(void) {
+    assert(PC_START == 0x200);
+}
+
+void test_large_rom(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    char* large_rom_path = "../roms/large.ch8";
+    int result = load_rom(chip8, large_rom_path);
+    assert(result == ERR_ROM_TOO_LARGE);
+    for (int i = PC_START; i < MEM_SIZE; i++) {
+        assert(chip8->memory[i] == 0);
+    }
+    free_chip8(chip8);
+}
+
+void test_load_rom_ok(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    char* rom_path = "../roms/ok.ch8";
+    int result = load_rom(chip8, rom_path);
+    assert(result == 0);
+    for (int i = 0; i < 10; i++) {
+        printf("chip8->memory[PC_START + %d] = %.2x\n", i, chip8->memory[PC_START + i]);
+        assert(chip8->memory[PC_START + i] != 0);
+    }
+    free_chip8(chip8);
+}
+
+void test_font(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    
+    for (int i = 0; i < 80; i++) {
+        assert(chip8->memory[FONTSET_START + i] == fontset[i]);
+    }
+    free_chip8(chip8);
+}
+
+int main(void) {
+    printf("Running tests...\n");
+    test_init_chip8_pc();
+    test_init_chip8_registers();
+    test_init_chip8_index_register();
+    test_init_chip8_memory_linked();
+    test_mem_size();
+    test_pc();
+    test_large_rom();
+    test_load_rom_ok();
+    test_font();
+    printf("All tests passed!\n");
+    return 0;
+}

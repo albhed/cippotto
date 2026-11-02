@@ -5,6 +5,7 @@
 
 #define MEM_SIZE 4096
 #define PC_START 0x200
+#define FONTSET_START 0x000
 
 typedef struct {
     uint8_t data[MEM_SIZE];

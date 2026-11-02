@@ -4,6 +4,8 @@
 #include "../src/mem.h"
 #include "../src/err.h"
 
+extern const uint8_t fontset[80];
+
 void test_mem_size(void) {
     int expected_mem_size = 4096;
     Memory* mem = init_memory();
@@ -40,12 +42,24 @@ void test_load_rom_ok(void) {
     free(mem);
 }
 
+void test_font(void) {
+    Memory* mem = init_memory();
+    assert(mem != NULL);
+    
+    for (int i = 0; i < 80; i++) {
+        assert(mem->data[FONTSET_START + i] == fontset[i]);
+    }
+    free(mem);
+}
+
+
 int main(void) {
     printf("Running memory tests...\n");
     test_mem_size();
     test_pc();
     test_large_rom();
     test_load_rom_ok();
+    test_font();
     printf("All tests passed!\n");
     return 0;
 }

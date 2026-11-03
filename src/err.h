@@ -8,5 +8,6 @@
 #define NO_ROM_SELECTED 5
 #define ERR_READING_ROM 6
 #define ERR_STACK_UNDERFLOW 7
+#define UNIMPLEMENTED_INSTRUCTION 8
 
 #endif /* ERR_H */

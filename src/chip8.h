@@ -44,5 +44,6 @@ StackPopResult* stack_pop(Chip8* chip);
 int clear_display(Chip8* chip);
 uint16_t fetch(Chip8* chip);
 DecodedInstruction decode(uint16_t opcode);
+int execute(Chip8* chip, DecodedInstruction instruction);
 
 #endif /* CHIP8_H */

@@ -188,6 +188,61 @@ void test_decode(void) {
     assert(decoded3.nnn == 0xFFF);
 }
 
+void test_execute_00E0(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+        chip8->display[i] = 1;
+    }
+
+    DecodedInstruction instruction = decode(0x00E0);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+
+    for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+        assert(chip8->display[i] == 0);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_1NNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    DecodedInstruction instruction = decode(0x1234);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+
+    assert(chip8->PC == 0x234);
+
+    free_chip8(chip8);
+}
+
+void test_execute_loop_1NNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0x12;
+    chip8->memory[PC_START + 1] = 0x00;
+
+   
+    for (int i = 0; i < 10; i++) {
+        int fetched = fetch(chip8);
+        assert(fetched == 0x1200);
+        assert(chip8->PC == PC_START + 2);
+        DecodedInstruction instruction = decode(fetched);
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+        assert(chip8->PC == 0x200);
+    }
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -203,6 +258,9 @@ int main(void) {
     test_clear_display();
     test_fetch();
     test_decode();
+    test_execute_00E0();
+    test_execute_1NNN();
+    test_execute_loop_1NNN();
     printf("All tests passed!\n");
     return 0;
 }

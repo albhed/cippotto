@@ -135,3 +135,20 @@ DecodedInstruction decode(uint16_t opcode) {
     instruction.nnn = opcode & 0x0FFF;
     return instruction;
 }
+
+int execute(Chip8* chip, DecodedInstruction instruction) {
+    switch (instruction.nibble) {
+        case 0x0:
+            if (instruction.nn == 0xE0) {
+                return clear_display(chip);
+            }
+            return UNIMPLEMENTED_INSTRUCTION;
+        case 0x1:
+            chip->PC = instruction.nnn;
+            break;
+        default:
+            printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
+            return UNIMPLEMENTED_INSTRUCTION;
+    }
+    return 0;
+}

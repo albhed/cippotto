@@ -26,11 +26,13 @@ typedef struct {
 } StackPopResult;
 
 Chip8* init_chip8(void);
-void free_chip8(Chip8* chip8);
+void free_chip8(Chip8* chip);
 int load_rom(Chip8* chip, const char* filepath);
 
 int stack_push(Chip8* chip, uint16_t value);
 StackPopResult* stack_pop(Chip8* chip);
 
 int clear_display(Chip8* chip);
+uint16_t fetch(Chip8* chip);
+
 #endif /* CHIP8_H */

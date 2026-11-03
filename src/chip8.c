@@ -118,3 +118,9 @@ int clear_display(Chip8* chip) {
     memset(chip->display, 0, sizeof(chip->display));
     return 0;
 }
+
+uint16_t fetch(Chip8* chip) {
+    uint16_t opcode = (chip->memory[chip->PC] << 8) | chip->memory[chip->PC + 1];
+    chip->PC += 2;
+    return opcode;
+}

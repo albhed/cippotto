@@ -137,6 +137,27 @@ void test_clear_display(void) {
     free_chip8(chip8);
 }
 
+void test_fetch(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0x12;
+    chip8->memory[PC_START + 1] = 0x34;
+    chip8->memory[PC_START + 2] = 0x56;
+    chip8->memory[PC_START + 3] = 0x78;
+
+
+    uint16_t instruction = fetch(chip8);
+    assert(instruction == 0x1234);
+    assert(chip8->PC == PC_START + 2);
+
+    uint16_t instruction2 = fetch(chip8);
+    assert(instruction2 == 0x5678);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -150,6 +171,7 @@ int main(void) {
     test_font();
     test_stack_push_pop();
     test_clear_display();
+    test_fetch();
     printf("All tests passed!\n");
     return 0;
 }

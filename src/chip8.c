@@ -124,3 +124,14 @@ uint16_t fetch(Chip8* chip) {
     chip->PC += 2;
     return opcode;
 }
+
+DecodedInstruction decode(uint16_t opcode) {
+    DecodedInstruction instruction;
+    instruction.nibble = (opcode & 0xF000) >> 12;
+    instruction.x = (opcode & 0x0F00) >> 8;
+    instruction.y = (opcode & 0x00F0) >> 4;
+    instruction.n = opcode & 0x000F;
+    instruction.nn = opcode & 0x00FF;
+    instruction.nnn = opcode & 0x0FFF;
+    return instruction;
+}

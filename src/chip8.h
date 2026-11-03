@@ -25,6 +25,15 @@ typedef struct {
     int error;
 } StackPopResult;
 
+typedef struct {
+    uint8_t nibble;
+    uint8_t x;
+    uint8_t y;
+    uint8_t n;
+    uint8_t nn;
+    uint16_t nnn;
+} DecodedInstruction;
+
 Chip8* init_chip8(void);
 void free_chip8(Chip8* chip);
 int load_rom(Chip8* chip, const char* filepath);
@@ -34,5 +43,6 @@ StackPopResult* stack_pop(Chip8* chip);
 
 int clear_display(Chip8* chip);
 uint16_t fetch(Chip8* chip);
+DecodedInstruction decode(uint16_t opcode);
 
 #endif /* CHIP8_H */

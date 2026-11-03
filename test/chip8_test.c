@@ -158,6 +158,36 @@ void test_fetch(void) {
     free_chip8(chip8);
 }
 
+void test_decode(void) {
+    uint16_t opcode = 0xA2F0;
+    DecodedInstruction decoded = decode(opcode);
+
+    assert(decoded.nibble == 0xA);
+    assert(decoded.x == 0x2);
+    assert(decoded.y == 0xF);
+    assert(decoded.n == 0x0);
+    assert(decoded.nn == 0xF0);
+    assert(decoded.nnn == 0x2F0);
+
+    DecodedInstruction decoded2 = decode(0x6A3F);
+
+    assert(decoded2.nibble == 0x6);
+    assert(decoded2.x == 0xA);
+    assert(decoded2.y == 0x3);
+    assert(decoded2.n == 0xF);
+    assert(decoded2.nn == 0x3F);
+    assert(decoded2.nnn == 0xA3F);
+
+    DecodedInstruction decoded3 = decode(0xFFFF);
+
+    assert(decoded3.nibble == 0xF);
+    assert(decoded3.x == 0xF);
+    assert(decoded3.y == 0xF);
+    assert(decoded3.n == 0xF);
+    assert(decoded3.nn == 0xFF);
+    assert(decoded3.nnn == 0xFFF);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -172,6 +202,7 @@ int main(void) {
     test_stack_push_pop();
     test_clear_display();
     test_fetch();
+    test_decode();
     printf("All tests passed!\n");
     return 0;
 }

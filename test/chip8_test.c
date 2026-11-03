@@ -108,6 +108,35 @@ void test_stack_push_pop(void) {
     free_chip8(chip8);
 }
 
+void print_display(const Chip8* chip8) {
+    for (int y = 0; y < DISPLAY_HEIGHT; y++) {
+        for (int x = 0; x < DISPLAY_WIDTH; x++) {
+            printf("%c", chip8->display[y * DISPLAY_WIDTH + x] ? 'X' : '.');
+        }
+        printf("\n");
+    }
+}
+
+void test_clear_display(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->display[0 * 64 + 0] = 1;
+    chip8->display[31 * 64 + 0] = 1;
+    print_display(chip8);
+
+    int clear_result = clear_display(chip8);
+    assert(clear_result == 0);
+    printf("Display cleared.\n");
+    for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+        assert(chip8->display[i] == 0);
+    }
+
+    print_display(chip8);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -120,6 +149,7 @@ int main(void) {
     test_load_rom_ok();
     test_font();
     test_stack_push_pop();
+    test_clear_display();
     printf("All tests passed!\n");
     return 0;
 }

@@ -40,6 +40,8 @@ Chip8* init_chip8(void) {
     chip8->SP = 0;
     memcpy(chip8->memory, fontset, 80);
 
+    memset(chip8->display, 0, sizeof(chip8->display));
+
     return chip8;
 }
 
@@ -110,4 +112,9 @@ StackPopResult* stack_pop(Chip8* chip) {
     result->value = chip->stack[chip->SP];
     result->error = 0;
     return result;
+}
+
+int clear_display(Chip8* chip) {
+    memset(chip->display, 0, sizeof(chip->display));
+    return 0;
 }

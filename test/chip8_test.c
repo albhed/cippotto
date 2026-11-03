@@ -243,6 +243,84 @@ void test_execute_loop_1NNN(void) {
     free_chip8(chip8);
 }
 
+void test_execute_6XNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0x6A;
+    chip8->memory[PC_START + 1] = 0x3F;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x6A3F);
+    assert(chip8->PC == PC_START + 2);
+
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+
+    for(int i = 0; i < 16; i++) {
+        if (i == 0xA) {
+            assert(chip8->V[i] == 0x3F);
+        } else {
+            assert(chip8->V[i] == 0);
+        }
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_7XNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0x6A;
+    chip8->memory[PC_START + 1] = 0x05;
+    chip8->memory[PC_START + 2] = 0x7A;
+    chip8->memory[PC_START + 3] = 0x03;
+    chip8->V[0xF] = 0xAA;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x6A05);
+    assert(chip8->PC == PC_START + 2);
+
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->V[0xA] == 0x05);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x7A03);
+    assert(chip8->PC == PC_START + 4);
+
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+    assert(chip8->V[0xA] == 0x08);
+    assert(chip8->V[0xF] == 0xAA);
+
+    free_chip8(chip8);
+}
+
+void test_execute_7XNN_overflow(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->V[0xF] = 0xAA;
+
+    DecodedInstruction instruction1 = decode(0x6AFA);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->V[0xA] == 0xFA);
+
+    DecodedInstruction instruction2 = decode(0x7A0A);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+    assert(chip8->V[0xA] == 0x04);
+    assert(chip8->V[0xF] == 0xAA);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -261,6 +339,9 @@ int main(void) {
     test_execute_00E0();
     test_execute_1NNN();
     test_execute_loop_1NNN();
+    test_execute_6XNN();
+    test_execute_7XNN();
+    test_execute_7XNN_overflow();
     printf("All tests passed!\n");
     return 0;
 }

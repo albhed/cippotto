@@ -146,6 +146,12 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
         case 0x1:
             chip->PC = instruction.nnn;
             break;
+        case 0x6:
+            chip->V[instruction.x] = instruction.nn;
+            break;
+        case 0x7:
+            chip->V[instruction.x] += instruction.nn;
+            break;
         default:
             printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
             return UNIMPLEMENTED_INSTRUCTION;

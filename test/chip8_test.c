@@ -321,6 +321,134 @@ void test_execute_7XNN_overflow(void) {
     free_chip8(chip8);
 }
 
+void test_execute_ANNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    DecodedInstruction instruction = decode(0xA2F0);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+
+    assert(chip8->I == 0x2F0);
+
+    free_chip8(chip8);
+}
+
+void test_execute_2NNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->memory[PC_START] = 0x22;
+    chip8->memory[PC_START + 1] = 0xF0;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x22F0);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+
+    assert(chip8->SP == 1);
+    StackPopResult* pop_result = stack_pop(chip8);
+    assert(pop_result != NULL);
+    assert(pop_result->error == 0);
+    assert(pop_result->value == PC_START + 2);
+    free(pop_result);
+
+    free_chip8(chip8);
+}
+
+void test_execute_00EE(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0x22;
+    chip8->memory[PC_START + 1] = 0xF0;
+    chip8->memory[0x02F0] = 0x00;
+    chip8->memory[0x02F1] = 0xEE;
+
+    int fetched = fetch(chip8);
+
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->SP == 1);
+
+    fetched = fetch(chip8);
+    DecodedInstruction instruction2 = decode(fetched);
+
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+    assert(chip8->SP == 0);
+    assert(chip8->PC == 0x202);
+
+    free_chip8(chip8);
+}
+
+void test_execute_00EE_empty_stack(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->SP == 0);
+
+    DecodedInstruction instruction = decode(0x00EE);
+    int result = execute(chip8, instruction);
+    assert(result == ERR_STACK_UNDERFLOW);
+    assert(chip8->SP == 0);
+
+    free_chip8(chip8);
+}
+
+void test_execute_nested_subroutines(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0x22;
+    chip8->memory[PC_START + 1] = 0xF0;
+    chip8->memory[0x02F0] = 0x24;
+    chip8->memory[0x02F1] = 0x00;
+    chip8->memory[0x0400] = 0x00;
+    chip8->memory[0x0401] = 0xEE;
+    chip8->memory[0x02F2] = 0x00;
+    chip8->memory[0x02F3] = 0xEE;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x22F0);
+
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->SP == 1);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x2400);
+
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+    assert(chip8->SP == 2);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x00EE);
+
+    DecodedInstruction instruction3 = decode(fetched);
+    int result3 = execute(chip8, instruction3);
+    assert(chip8->stack[chip8->SP] == 0x02F2);
+    assert(chip8->PC == 0x02F2);
+    assert(result3 == 0);
+    assert(chip8->SP == 1);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x00EE);
+
+    DecodedInstruction instruction4 = decode(fetched);
+    int result4 = execute(chip8, instruction4);
+    assert(result4 == 0);
+    assert(chip8->SP == 0);
+    assert(chip8->PC == 0x202);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -342,6 +470,11 @@ int main(void) {
     test_execute_6XNN();
     test_execute_7XNN();
     test_execute_7XNN_overflow();
+    test_execute_ANNN();
+    test_execute_2NNN();
+    test_execute_00EE();
+    test_execute_00EE_empty_stack();
+    test_execute_nested_subroutines();
     printf("All tests passed!\n");
     return 0;
 }

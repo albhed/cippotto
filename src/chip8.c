@@ -139,11 +139,33 @@ DecodedInstruction decode(uint16_t opcode) {
 int execute(Chip8* chip, DecodedInstruction instruction) {
     switch (instruction.nibble) {
         case 0x0:
-            if (instruction.nn == 0xE0) {
-                return clear_display(chip);
+            switch(instruction.nn) {
+                case 0xE0:
+                    return clear_display(chip);
+                case 0xEE: {
+                    StackPopResult* pop_result = stack_pop(chip);
+                    int pop_error = pop_result->error;
+                    if (pop_error != 0) {
+                        free(pop_result);
+                        return pop_error;
+                    }
+                    chip->PC = pop_result->value;
+                    free(pop_result);
+                    break;
+                }
+                default:
+                    printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
+                    return UNIMPLEMENTED_INSTRUCTION;
             }
-            return UNIMPLEMENTED_INSTRUCTION;
+            break;
         case 0x1:
+            chip->PC = instruction.nnn;
+            break;
+        case 0x2:
+            int push_result = stack_push(chip, chip->PC);
+            if (push_result != 0) {
+                return push_result;
+            }
             chip->PC = instruction.nnn;
             break;
         case 0x6:
@@ -151,6 +173,9 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
             break;
         case 0x7:
             chip->V[instruction.x] += instruction.nn;
+            break;
+        case 0xA:
+            chip->I = instruction.nnn;
             break;
         default:
             printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);

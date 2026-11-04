@@ -449,6 +449,410 @@ void test_execute_nested_subroutines(void) {
     free_chip8(chip8);
 }
 
+void test_execute_3XNN_true(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x3A;
+    chip8->memory[PC_START + 1] = 0x05;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x3A05);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_3XNN_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x3A;
+    chip8->memory[PC_START + 1] = 0x06;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x3A06);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    free_chip8(chip8);
+}
+
+void test_execute_4XNN_true(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x4A;
+    chip8->memory[PC_START + 1] = 0x05;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x4A05);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    free_chip8(chip8);
+}
+
+void test_execute_4XNN_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x4A;
+    chip8->memory[PC_START + 1] = 0x06;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x4A06);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_5XY0_true(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x05;
+    chip8->memory[PC_START] = 0x5A;
+    chip8->memory[PC_START + 1] = 0xB0;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x5AB0);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_5XY0_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x06;
+    chip8->memory[PC_START] = 0x5A;
+    chip8->memory[PC_START + 1] = 0xB0;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x5AB0);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    free_chip8(chip8);
+}
+
+void test_execute_9XY0_true(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x06;
+    chip8->memory[PC_START] = 0x9A;
+    chip8->memory[PC_START + 1] = 0xB0;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x9AB0);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_9XY0_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x05;
+    chip8->memory[PC_START] = 0x9A;
+    chip8->memory[PC_START + 1] = 0xB0;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x9AB0);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    free_chip8(chip8);
+}
+
+void test_execute_3XNN_program_skips_forbidden_instruction(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x3A;
+    chip8->memory[PC_START + 1] = 0x05;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+    chip8->memory[PC_START + 4] = 0x6B;
+    chip8->memory[PC_START + 5] = 0x01;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x3A05);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6B01);
+    assert(chip8->PC == PC_START + 6);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0x05);
+    assert(chip8->V[0xB] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_3XNN_program_executes_forbidden_instruction_when_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x3A;
+    chip8->memory[PC_START + 1] = 0x06;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x3A06);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6AFF);
+    assert(chip8->PC == PC_START + 4);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0xFF);
+
+    free_chip8(chip8);
+}
+
+void test_execute_4XNN_program_skips_forbidden_instruction(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x4A;
+    chip8->memory[PC_START + 1] = 0x06;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+    chip8->memory[PC_START + 4] = 0x6B;
+    chip8->memory[PC_START + 5] = 0x01;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x4A06);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6B01);
+    assert(chip8->PC == PC_START + 6);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0x05);
+    assert(chip8->V[0xB] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_4XNN_program_executes_forbidden_instruction_when_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->memory[PC_START] = 0x4A;
+    chip8->memory[PC_START + 1] = 0x05;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x4A05);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6AFF);
+    assert(chip8->PC == PC_START + 4);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0xFF);
+
+    free_chip8(chip8);
+}
+
+void test_execute_5XY0_program_skips_forbidden_instruction(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x05;
+    chip8->memory[PC_START] = 0x5A;
+    chip8->memory[PC_START + 1] = 0xB0;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+    chip8->memory[PC_START + 4] = 0x6C;
+    chip8->memory[PC_START + 5] = 0x01;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x5AB0);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6C01);
+    assert(chip8->PC == PC_START + 6);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0x05);
+    assert(chip8->V[0xC] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_5XY0_program_executes_forbidden_instruction_when_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x06;
+    chip8->memory[PC_START] = 0x5A;
+    chip8->memory[PC_START + 1] = 0xB0;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x5AB0);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6AFF);
+    assert(chip8->PC == PC_START + 4);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0xFF);
+
+    free_chip8(chip8);
+}
+
+void test_execute_9XY0_program_skips_forbidden_instruction(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x06;
+    chip8->memory[PC_START] = 0x9A;
+    chip8->memory[PC_START + 1] = 0xB0;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+    chip8->memory[PC_START + 4] = 0x6C;
+    chip8->memory[PC_START + 5] = 0x01;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x9AB0);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6C01);
+    assert(chip8->PC == PC_START + 6);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0x05);
+    assert(chip8->V[0xC] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_9XY0_program_executes_forbidden_instruction_when_false(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x05;
+    chip8->memory[PC_START] = 0x9A;
+    chip8->memory[PC_START + 1] = 0xB0;
+    chip8->memory[PC_START + 2] = 0x6A;
+    chip8->memory[PC_START + 3] = 0xFF;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0x9AB0);
+    DecodedInstruction instruction1 = decode(fetched);
+    int result1 = execute(chip8, instruction1);
+    assert(result1 == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    fetched = fetch(chip8);
+    assert(fetched == 0x6AFF);
+    assert(chip8->PC == PC_START + 4);
+    DecodedInstruction instruction2 = decode(fetched);
+    int result2 = execute(chip8, instruction2);
+    assert(result2 == 0);
+
+    assert(chip8->V[0xA] == 0xFF);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -475,6 +879,22 @@ int main(void) {
     test_execute_00EE();
     test_execute_00EE_empty_stack();
     test_execute_nested_subroutines();
+    test_execute_3XNN_true();
+    test_execute_3XNN_false();
+    test_execute_4XNN_true();
+    test_execute_4XNN_false();
+    test_execute_5XY0_true();
+    test_execute_5XY0_false();
+    test_execute_9XY0_true();
+    test_execute_9XY0_false();
+    test_execute_3XNN_program_skips_forbidden_instruction();
+    test_execute_3XNN_program_executes_forbidden_instruction_when_false();
+    test_execute_4XNN_program_skips_forbidden_instruction();
+    test_execute_4XNN_program_executes_forbidden_instruction_when_false();
+    test_execute_5XY0_program_skips_forbidden_instruction();
+    test_execute_5XY0_program_executes_forbidden_instruction_when_false();
+    test_execute_9XY0_program_skips_forbidden_instruction();
+    test_execute_9XY0_program_executes_forbidden_instruction_when_false();
     printf("All tests passed!\n");
     return 0;
 }

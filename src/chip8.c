@@ -168,11 +168,31 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
             }
             chip->PC = instruction.nnn;
             break;
+        case 0x3:
+            if (chip->V[instruction.x] == instruction.nn) {
+                chip->PC += 2;
+            }
+            break;
+        case 0x4:
+            if (chip->V[instruction.x] != instruction.nn) {
+                chip->PC += 2;
+            }
+            break;
+        case 0x5:
+            if (chip->V[instruction.x] == chip->V[instruction.y]) {
+                chip->PC += 2;
+            }
+            break;
         case 0x6:
             chip->V[instruction.x] = instruction.nn;
             break;
         case 0x7:
             chip->V[instruction.x] += instruction.nn;
+            break;
+        case 0x9:
+            if (chip->V[instruction.x] != chip->V[instruction.y]) {
+                chip->PC += 2;
+            }
             break;
         case 0xA:
             chip->I = instruction.nnn;

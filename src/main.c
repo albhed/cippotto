@@ -1,7 +1,9 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "chip8.h"
+#include "display.h"
 #include "err.h"
 
 static void print_cpu_state(const Chip8* chip8) {
@@ -12,10 +14,14 @@ static void print_cpu_state(const Chip8* chip8) {
 }
 
 int main(int argc, char* argv[]) {
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        printf("Error: Could not initialize SDL: %s\n", SDL_GetError());
+        return ERR_SDL_INIT_FAILED;
+    }
 
     if (argc < 2) {
         printf("Error: No ROM file specified\n");
+        SDL_Quit();
         return NO_ROM_SELECTED;
     }
 
@@ -23,6 +29,7 @@ int main(int argc, char* argv[]) {
 
     if (chip8 == NULL) {
         printf("Error: Could not initialize chip8\n");
+        SDL_Quit();
         return ERR_MEMORY_ALLOCATION_FAILED;
     }
 
@@ -30,12 +37,30 @@ int main(int argc, char* argv[]) {
     if (load_rom_result != 0) {
         printf("Error: Could not load ROM\n");
         free_chip8(chip8);
+        SDL_Quit();
         return load_rom_result;
     }
 
     print_cpu_state(chip8);
 
+    Display* display = display_init();
+    if (display == NULL) {
+        printf("Error: Could not initialize display\n");
+        free_chip8(chip8);
+        SDL_Quit();
+        return ERR_DISPLAY_INIT_FAILED;
+    }
+
+    bool running = true;
+    while (running) {
+        running = display_process_events();
+        display_render(display, chip8);
+        SDL_Delay(16);
+    }
+
+    display_destroy(display);
     free_chip8(chip8);
-    printf("CHIP-8 emulator - setup OK");
+    SDL_Quit();
+    printf("CHIP-8 emulator - shutting down\n");
     return 0;
 }

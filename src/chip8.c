@@ -194,6 +194,50 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                 chip->PC += 2;
             }
             break;
+        case 0x8: {
+            uint8_t vx = chip->V[instruction.x];
+            uint8_t vy = chip->V[instruction.y];
+            switch (instruction.n) {
+                case 0x0:
+                    chip->V[instruction.x] = vy;
+                    break;
+                case 0x1:
+                    chip->V[instruction.x] = vx | vy;
+                    break;
+                case 0x2:
+                    chip->V[instruction.x] = vx & vy;
+                    break;
+                case 0x3:
+                    chip->V[instruction.x] = vx ^ vy;
+                    break;
+                case 0x4: {
+                    uint16_t sum = (uint16_t)vx + (uint16_t)vy;
+                    chip->V[instruction.x] = (uint8_t)sum;
+                    chip->V[0xF] = (sum > 0xFF) ? 1 : 0;
+                    break;
+                }
+                case 0x5:
+                    chip->V[instruction.x] = (uint8_t)(vx - vy);
+                    chip->V[0xF] = (vx >= vy) ? 1 : 0;
+                    break;
+                case 0x6:
+                    chip->V[instruction.x] = vx >> 1;
+                    chip->V[0xF] = vx & 0x1;
+                    break;
+                case 0x7:
+                    chip->V[instruction.x] = (uint8_t)(vy - vx);
+                    chip->V[0xF] = (vy >= vx) ? 1 : 0;
+                    break;
+                case 0xE:
+                    chip->V[instruction.x] = (uint8_t)(vx << 1);
+                    chip->V[0xF] = (vx & 0x80) ? 1 : 0;
+                    break;
+                default:
+                    printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
+                    return UNIMPLEMENTED_INSTRUCTION;
+            }
+            break;
+        }
         case 0xA:
             chip->I = instruction.nnn;
             break;

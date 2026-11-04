@@ -853,6 +853,223 @@ void test_execute_9XY0_program_executes_forbidden_instruction_when_false(void) {
     free_chip8(chip8);
 }
 
+void test_execute_8XY0(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x09;
+
+    DecodedInstruction instruction = decode(0x8AB0);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x09);
+    assert(chip8->V[0xB] == 0x09);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY1(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x0F;
+    chip8->V[0xB] = 0xF0;
+
+    DecodedInstruction instruction = decode(0x8AB1);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0xFF);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY2(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x0F;
+    chip8->V[0xB] = 0xFC;
+
+    DecodedInstruction instruction = decode(0x8AB2);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x0C);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY3(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x0F;
+    chip8->V[0xB] = 0xFF;
+
+    DecodedInstruction instruction = decode(0x8AB3);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0xF0);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY4_no_carry(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x01;
+    chip8->V[0xB] = 0x02;
+
+    DecodedInstruction instruction = decode(0x8AB4);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x03);
+    assert(chip8->V[0xF] == 0x00);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY4_carry(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0xFF;
+    chip8->V[0xB] = 0x02;
+
+    DecodedInstruction instruction = decode(0x8AB4);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x01);
+    assert(chip8->V[0xF] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY5_no_borrow(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x03;
+
+    DecodedInstruction instruction = decode(0x8AB5);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x02);
+    assert(chip8->V[0xF] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY5_borrow(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x03;
+    chip8->V[0xB] = 0x05;
+
+    DecodedInstruction instruction = decode(0x8AB5);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0xFE);
+    assert(chip8->V[0xF] == 0x00);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY6_flag_one(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+
+    DecodedInstruction instruction = decode(0x8AB6);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x02);
+    assert(chip8->V[0xF] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY6_flag_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x04;
+
+    DecodedInstruction instruction = decode(0x8AB6);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x02);
+    assert(chip8->V[0xF] == 0x00);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY7_no_borrow(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x03;
+    chip8->V[0xB] = 0x05;
+
+    DecodedInstruction instruction = decode(0x8AB7);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x02);
+    assert(chip8->V[0xF] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY7_borrow(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x05;
+    chip8->V[0xB] = 0x03;
+
+    DecodedInstruction instruction = decode(0x8AB7);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0xFE);
+    assert(chip8->V[0xF] == 0x00);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XYE_flag_one(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x81;
+
+    DecodedInstruction instruction = decode(0x8ABE);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x02);
+    assert(chip8->V[0xF] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XYE_flag_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x01;
+
+    DecodedInstruction instruction = decode(0x8ABE);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x02);
+    assert(chip8->V[0xF] == 0x00);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -895,6 +1112,20 @@ int main(void) {
     test_execute_5XY0_program_executes_forbidden_instruction_when_false();
     test_execute_9XY0_program_skips_forbidden_instruction();
     test_execute_9XY0_program_executes_forbidden_instruction_when_false();
+    test_execute_8XY0();
+    test_execute_8XY1();
+    test_execute_8XY2();
+    test_execute_8XY3();
+    test_execute_8XY4_no_carry();
+    test_execute_8XY4_carry();
+    test_execute_8XY5_no_borrow();
+    test_execute_8XY5_borrow();
+    test_execute_8XY6_flag_one();
+    test_execute_8XY6_flag_zero();
+    test_execute_8XY7_no_borrow();
+    test_execute_8XY7_borrow();
+    test_execute_8XYE_flag_one();
+    test_execute_8XYE_flag_zero();
     printf("All tests passed!\n");
     return 0;
 }

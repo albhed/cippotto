@@ -78,6 +78,72 @@ static void test_display_render_draws_pixel_at_correct_position(void) {
     free_chip8(chip8);
 }
 
+static void run_cpu_cycles(Chip8* chip8, int max_cycles) {
+    uint16_t prev_pc = 0xFFFF;
+    for (int i = 0; i < max_cycles; i++) {
+        uint16_t current_pc = chip8->PC;
+        if (current_pc == prev_pc) {
+            break;
+        }
+        prev_pc = current_pc;
+        uint16_t opcode = fetch(chip8);
+        DecodedInstruction instruction = decode(opcode);
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+    }
+}
+
+static void test_display_renders_ibm_logo_rom(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    int load_result = load_rom(chip8, "../roms/ibm_logo.ch8");
+    assert(load_result == 0);
+
+    run_cpu_cycles(chip8, 50);
+    assert(chip8->PC == 0x228);
+
+    Display* display = display_init();
+    assert(display != NULL);
+
+    display_render(display, chip8);
+
+    Uint32* pixel_buffer = malloc(sizeof(Uint32) * FRAME_WIDTH * FRAME_HEIGHT);
+    assert(pixel_buffer != NULL);
+
+    SDL_Rect viewport = {0, 0, FRAME_WIDTH, FRAME_HEIGHT};
+    int result = SDL_RenderReadPixels(display->renderer, &viewport, SDL_PIXELFORMAT_RGBA32,
+                                       pixel_buffer, FRAME_WIDTH * sizeof(Uint32));
+    assert(result == 0);
+
+    SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32);
+    assert(format != NULL);
+
+    long white_pixel_count = 0;
+    for (int i = 0; i < FRAME_WIDTH * FRAME_HEIGHT; i++) {
+        Uint8 r, g, b, a;
+        SDL_GetRGBA(pixel_buffer[i], format, &r, &g, &b, &a);
+        if (r == 255 && g == 255 && b == 255) {
+            white_pixel_count++;
+        }
+    }
+
+    int lit_logical_pixels = 0;
+    for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+        if (chip8->display[i]) {
+            lit_logical_pixels++;
+        }
+    }
+
+    assert(lit_logical_pixels > 100);
+    assert(white_pixel_count == (long)lit_logical_pixels * DISPLAY_SCALE * DISPLAY_SCALE);
+
+    SDL_FreeFormat(format);
+    free(pixel_buffer);
+    display_destroy(display);
+    free_chip8(chip8);
+}
+
 int main(void) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -89,6 +155,7 @@ int main(void) {
     test_display_process_events_continue_when_no_event();
     test_display_process_events_stops_on_quit();
     test_display_render_draws_pixel_at_correct_position();
+    test_display_renders_ibm_logo_rom();
 
     SDL_Quit();
     printf("All display tests passed!\n");

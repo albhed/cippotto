@@ -1136,6 +1136,215 @@ void test_execute_CXNN_zero_mask(void) {
     free_chip8(chip8);
 }
 
+void test_execute_DXYN_draws_font_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = FONTSET_START;
+    chip8->V[0x0] = 10;
+    chip8->V[0x1] = 5;
+
+    DecodedInstruction instruction = decode(0xD015);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    print_display(chip8);
+
+    for (int row = 0; row < 5; row++) {
+        uint8_t sprite_byte = fontset[row];
+        for (int col = 0; col < 8; col++) {
+            uint8_t expected = (sprite_byte >> (7 - col)) & 0x1;
+            uint8_t actual = chip8->display[(5 + row) * DISPLAY_WIDTH + (10 + col)];
+            assert(actual == expected);
+        }
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_xor_double_draw_clears_screen(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[0x300] = 0xFF;
+    chip8->memory[0x301] = 0x81;
+    chip8->memory[0x302] = 0x81;
+    chip8->memory[0x303] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x2] = 20;
+    chip8->V[0x3] = 10;
+
+    DecodedInstruction instruction = decode(0xD234);
+
+    int result1 = execute(chip8, instruction);
+    assert(result1 == 0);
+    assert(chip8->V[0xF] == 0);
+
+    int result2 = execute(chip8, instruction);
+    assert(result2 == 0);
+    assert(chip8->V[0xF] == 1);
+
+    for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+        assert(chip8->display[i] == 0);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_no_collision(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[0x300] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0;
+    chip8->V[0x1] = 0;
+
+    DecodedInstruction instruction = decode(0xD011);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_collision(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->display[0] = 1;
+    chip8->memory[0x300] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0;
+    chip8->V[0x1] = 0;
+
+    DecodedInstruction instruction = decode(0xD011);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 1);
+    assert(chip8->display[0] == 0);
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_clipping_right_edge(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[0x300] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x4] = 60;
+    chip8->V[0x5] = 0;
+
+    DecodedInstruction instruction = decode(0xD451);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    for (int col = 0; col < 4; col++) {
+        assert(chip8->display[0 * DISPLAY_WIDTH + 60 + col] == 1);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_clipping_bottom_edge(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[0x300] = 0xFF;
+    chip8->memory[0x301] = 0xFF;
+    chip8->memory[0x302] = 0xFF;
+    chip8->memory[0x303] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x6] = 0;
+    chip8->V[0x7] = 31;
+
+    DecodedInstruction instruction = decode(0xD674);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    for (int col = 0; col < 8; col++) {
+        assert(chip8->display[31 * DISPLAY_WIDTH + col] == 1);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_zero_rows_no_crash(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[0x300] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x2] = 0;
+    chip8->V[0x3] = 0;
+
+    DecodedInstruction instruction = decode(0xD230);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+        assert(chip8->display[i] == 0);
+    }
+
+    free_chip8(chip8);
+}
+
+static void run_cpu_cycles(Chip8* chip8, int max_cycles) {
+    uint16_t prev_pc = 0xFFFF;
+    for (int i = 0; i < max_cycles; i++) {
+        uint16_t current_pc = chip8->PC;
+        if (current_pc == prev_pc) {
+            break;
+        }
+        prev_pc = current_pc;
+        uint16_t opcode = fetch(chip8);
+        DecodedInstruction instruction = decode(opcode);
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+    }
+}
+
+void test_execute_ibm_logo_rom(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    char* rom_path = "../roms/ibm_logo.ch8";
+    int load_result = load_rom(chip8, rom_path);
+    assert(load_result == 0);
+
+    run_cpu_cycles(chip8, 50);
+
+    assert(chip8->PC == 0x228);
+
+    printf("IBM logo framebuffer:\n");
+    print_display(chip8);
+
+    int lit_pixel_count = 0;
+    int min_x = DISPLAY_WIDTH, max_x = -1, min_y = DISPLAY_HEIGHT, max_y = -1;
+    for (int y = 0; y < DISPLAY_HEIGHT; y++) {
+        for (int x = 0; x < DISPLAY_WIDTH; x++) {
+            if (chip8->display[y * DISPLAY_WIDTH + x]) {
+                lit_pixel_count++;
+                if (x < min_x) min_x = x;
+                if (x > max_x) max_x = x;
+                if (y < min_y) min_y = y;
+                if (y > max_y) max_y = y;
+            }
+        }
+    }
+
+    assert(lit_pixel_count > 100);
+    assert(min_x > 0 && max_x < DISPLAY_WIDTH - 1);
+    assert(min_y > 0 && max_y < DISPLAY_HEIGHT - 1);
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -1196,6 +1405,14 @@ int main(void) {
     test_execute_CXNN_full_mask_produces_varied_values();
     test_execute_CXNN_partial_mask();
     test_execute_CXNN_zero_mask();
+    test_execute_DXYN_draws_font_zero();
+    test_execute_DXYN_xor_double_draw_clears_screen();
+    test_execute_DXYN_no_collision();
+    test_execute_DXYN_collision();
+    test_execute_DXYN_clipping_right_edge();
+    test_execute_DXYN_clipping_bottom_edge();
+    test_execute_DXYN_zero_rows_no_crash();
+    test_execute_ibm_logo_rom();
     printf("All tests passed!\n");
     return 0;
 }

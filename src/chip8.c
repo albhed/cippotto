@@ -258,6 +258,38 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
         case 0xC:
             chip->V[instruction.x] = (uint8_t)(rand() & instruction.nn);
             break;
+        case 0xD: {
+            uint8_t origin_x = chip->V[instruction.x];
+            uint8_t origin_y = chip->V[instruction.y];
+            uint8_t collision = 0;
+
+            for (int row = 0; row < instruction.n; row++) {
+                uint8_t sprite_byte = chip->memory[chip->I + row];
+                int pixel_y = origin_y + row;
+
+                if (pixel_y >= DISPLAY_HEIGHT) {
+                    continue;
+                }
+                for (int col = 0; col < 8; col++) {
+                    int pixel_x = origin_x + col;
+                    if (pixel_x >= DISPLAY_WIDTH) {
+                        continue;
+                    }
+                    uint8_t sprite_pixel = (sprite_byte >> (7 - col)) & 0x1;
+                    if (sprite_pixel == 0) {
+                        continue;
+                    }
+                    int display_index = pixel_y * DISPLAY_WIDTH + pixel_x;
+                    if (chip->display[display_index]) {
+                        collision = 1;
+                    }
+                    chip->display[display_index] ^= 1;
+                }
+            }
+
+            chip->V[0xF] = collision;
+            break;
+        }
         default:
             printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
             return UNIMPLEMENTED_INSTRUCTION;

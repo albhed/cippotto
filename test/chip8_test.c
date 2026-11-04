@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../src/chip8.h"
@@ -1070,6 +1071,71 @@ void test_execute_8XYE_flag_zero(void) {
     free_chip8(chip8);
 }
 
+void test_execute_BNNN(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0x0] = 0x05;
+
+    DecodedInstruction instruction = decode(0xB300);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == 0x305);
+
+    free_chip8(chip8);
+}
+
+void test_execute_CXNN_full_mask_produces_varied_values(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    bool seen[256] = { false };
+    int distinct_count = 0;
+
+    for (int i = 0; i < 1000; i++) {
+        DecodedInstruction instruction = decode(0xCAFF);
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+        assert(chip8->V[0xA] <= 0xFF);
+        if (!seen[chip8->V[0xA]]) {
+            seen[chip8->V[0xA]] = true;
+            distinct_count++;
+        }
+    }
+
+    assert(distinct_count >= 10);
+
+    free_chip8(chip8);
+}
+
+void test_execute_CXNN_partial_mask(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    for (int i = 0; i < 1000; i++) {
+        DecodedInstruction instruction = decode(0xCA0F);
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+        assert(chip8->V[0xA] <= 0x0F);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_CXNN_zero_mask(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    for (int i = 0; i < 1000; i++) {
+        DecodedInstruction instruction = decode(0xCA00);
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+        assert(chip8->V[0xA] == 0x00);
+    }
+
+    free_chip8(chip8);
+}
+
 int main(void) {
     printf("Running tests...\n");
     test_init_chip8_pc();
@@ -1126,6 +1192,10 @@ int main(void) {
     test_execute_8XY7_borrow();
     test_execute_8XYE_flag_one();
     test_execute_8XYE_flag_zero();
+    test_execute_BNNN();
+    test_execute_CXNN_full_mask_produces_varied_values();
+    test_execute_CXNN_partial_mask();
+    test_execute_CXNN_zero_mask();
     printf("All tests passed!\n");
     return 0;
 }

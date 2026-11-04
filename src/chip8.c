@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "chip8.h"
 #include "err.h"
 
@@ -23,7 +24,17 @@ const uint8_t fontset[80] = {
     0xF0,0x80,0xF0,0x80,0x80  // F
 };
 
+static void seed_random_once(void) {
+    static int seeded = 0;
+    if (!seeded) {
+        srand((unsigned int)time(NULL));
+        seeded = 1;
+    }
+}
+
 Chip8* init_chip8(void) {
+    seed_random_once();
+
     Chip8* chip8 = (Chip8*)malloc(sizeof(Chip8));
     if (chip8 == NULL) {
         printf("Error: Could not allocate memory for Chip8 struct\n");
@@ -240,6 +251,12 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
         }
         case 0xA:
             chip->I = instruction.nnn;
+            break;
+        case 0xB:
+            chip->PC = instruction.nnn + chip->V[0x0];
+            break;
+        case 0xC:
+            chip->V[instruction.x] = (uint8_t)(rand() & instruction.nn);
             break;
         default:
             printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);

@@ -6,6 +6,7 @@
 A CHIP-8 emulator written in C (C99) with SDL2.
 
 ![IBM logo test ROM running in the emulator](docs/ibm_logo.png)
+![Corax test results](docs/corax_test.png)
 
 ## Features
 

@@ -6,6 +6,7 @@
 #define MEM_SIZE 4096
 #define PC_START 0x200
 #define FONTSET_START 0x000
+#define FONT_CHAR_SIZE 5
 #define NUM_REGISTERS 16
 #define DISPLAY_WIDTH 64
 #define DISPLAY_HEIGHT 32

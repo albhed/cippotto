@@ -1636,6 +1636,200 @@ void test_execute_FX15_then_update_timers_then_FX07_shows_decrement(void) {
     free_chip8(chip8);
 }
 
+void test_execute_FX1E_adds_vx_to_i(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = 0x300;
+    chip8->V[0xA] = 0x10;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x1E;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xFA1E);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->I == 0x310);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX29_points_to_font_char_A(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0xA;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x29;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xFA29);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->I == FONTSET_START + 0xA * FONT_CHAR_SIZE);
+
+    for (int i = 0; i < FONT_CHAR_SIZE; i++) {
+        assert(chip8->memory[chip8->I + i] == fontset[0xA * FONT_CHAR_SIZE + i]);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX33_bcd_decomposition(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = 0x300;
+    chip8->V[0xA] = 234;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x33;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xFA33);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[0x300] == 2);
+    assert(chip8->memory[0x301] == 3);
+    assert(chip8->memory[0x302] == 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX33_bcd_with_leading_zeros(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = 0x300;
+    chip8->V[0xA] = 7;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x33;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[0x300] == 0);
+    assert(chip8->memory[0x301] == 0);
+    assert(chip8->memory[0x302] == 7);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX55_stores_registers_to_memory(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0x11;
+    chip8->V[0x1] = 0x22;
+    chip8->V[0x2] = 0x33;
+    chip8->V[0x3] = 0x44;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xF355);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[0x300] == 0x11);
+    assert(chip8->memory[0x301] == 0x22);
+    assert(chip8->memory[0x302] == 0x33);
+    assert(chip8->memory[0x303] == 0x44);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX65_loads_registers_from_memory(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = 0x300;
+    chip8->memory[0x300] = 0xAA;
+    chip8->memory[0x301] = 0xBB;
+    chip8->memory[0x302] = 0xCC;
+    chip8->memory[0x303] = 0xDD;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x65;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xF365);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0x0] == 0xAA);
+    assert(chip8->V[0x1] == 0xBB);
+    assert(chip8->V[0x2] == 0xCC);
+    assert(chip8->V[0x3] == 0xDD);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX55_near_mem_size_does_not_write_out_of_bounds(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = MEM_SIZE - 2;
+    chip8->V[0x0] = 0x11;
+    chip8->V[0x1] = 0x22;
+    chip8->V[0x2] = 0x33;
+    chip8->V[0x3] = 0x44;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[MEM_SIZE - 2] == 0x11);
+    assert(chip8->memory[MEM_SIZE - 1] == 0x22);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX65_near_mem_size_does_not_read_out_of_bounds(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = MEM_SIZE - 2;
+    chip8->memory[MEM_SIZE - 2] = 0x55;
+    chip8->memory[MEM_SIZE - 1] = 0x66;
+    chip8->V[0x2] = 0x99;
+    chip8->V[0x3] = 0xAA;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x65;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0x0] == 0x55);
+    assert(chip8->V[0x1] == 0x66);
+    assert(chip8->V[0x2] == 0x99);
+    assert(chip8->V[0x3] == 0xAA);
+
+    free_chip8(chip8);
+}
+
 static void run_cpu_cycles(Chip8* chip8, int max_cycles) {
     uint16_t prev_pc = 0xFFFF;
     for (int i = 0; i < max_cycles; i++) {
@@ -1773,6 +1967,14 @@ int main(void) {
     test_execute_FX15_writes_delay_timer();
     test_execute_FX18_writes_sound_timer();
     test_execute_FX15_then_update_timers_then_FX07_shows_decrement();
+    test_execute_FX1E_adds_vx_to_i();
+    test_execute_FX29_points_to_font_char_A();
+    test_execute_FX33_bcd_decomposition();
+    test_execute_FX33_bcd_with_leading_zeros();
+    test_execute_FX55_stores_registers_to_memory();
+    test_execute_FX65_loads_registers_from_memory();
+    test_execute_FX55_near_mem_size_does_not_write_out_of_bounds();
+    test_execute_FX65_near_mem_size_does_not_read_out_of_bounds();
     test_execute_ibm_logo_rom();
     printf("All tests passed!\n");
     return 0;

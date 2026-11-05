@@ -1,8 +1,6 @@
 #include "input.h"
 
 /*
- * Mappatura tastiera fisica (QWERTY) -> tastierino CHIP-8:
- *
  * CHIP-8          Tastiera
  * 1 2 3 C         1 2 3 4
  * 4 5 6 D   -->   Q W E R

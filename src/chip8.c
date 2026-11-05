@@ -284,6 +284,9 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
             uint8_t collision = 0;
 
             for (int row = 0; row < instruction.n; row++) {
+                if (chip->I + row >= MEM_SIZE) {
+                    continue;
+                }
                 uint8_t sprite_byte = chip->memory[chip->I + row];
                 int pixel_y = origin_y + row;
 
@@ -355,6 +358,41 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                     break;
                 case 0x18:
                     chip->sound_timer = chip->V[instruction.x];
+                    break;
+                case 0x1E:
+                    chip->I = (uint16_t)(chip->I + chip->V[instruction.x]);
+                    break;
+                case 0x29:
+                    chip->I = FONTSET_START + (uint16_t)(chip->V[instruction.x] * FONT_CHAR_SIZE);
+                    break;
+                case 0x33: {
+                    uint8_t vx = chip->V[instruction.x];
+                    uint8_t hundreds = vx / 100;
+                    uint8_t tens = (vx / 10) % 10;
+                    uint8_t ones = vx % 10;
+
+                    if (chip->I + 2 < MEM_SIZE) {
+                        chip->memory[chip->I] = hundreds;
+                        chip->memory[chip->I + 1] = tens;
+                        chip->memory[chip->I + 2] = ones;
+                    }
+                    break;
+                }
+                case 0x55:
+                    for (int i = 0; i <= instruction.x; i++) {
+                        if (chip->I + i >= MEM_SIZE) {
+                            break;
+                        }
+                        chip->memory[chip->I + i] = chip->V[i];
+                    }
+                    break;
+                case 0x65:
+                    for (int i = 0; i <= instruction.x; i++) {
+                        if (chip->I + i >= MEM_SIZE) {
+                            break;
+                        }
+                        chip->V[i] = chip->memory[chip->I + i];
+                    }
                     break;
                 default:
                     printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);

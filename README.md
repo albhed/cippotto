@@ -71,6 +71,19 @@ CHIP-8          Keyboard
 A 0 B F         Z X C V
 ```
 
+## Download
+
+If you just want to try the emulator without compiling it, prebuilt Linux
+binaries are published automatically for every tagged release on the
+[Releases page](https://github.com/albhed/cippotto/releases/latest).
+
+The prebuilt binary still requires the SDL2 runtime library to be installed
+on your system in order to run — this is the same dependency needed when
+building from source, not an extra one introduced by the binary.
+
+Only a Linux binary is published; if you're on another platform, build from
+source as described above.
+
 ## Testing
 
 ```sh

@@ -5,7 +5,10 @@
 #include "chip8.h"
 #include "display.h"
 #include "audio.h"
+#include "loop.h"
 #include "err.h"
+
+#define TARGET_FRAME_MS 16
 
 static void print_cpu_state(const Chip8* chip8) {
     printf("PC = 0x%04X\n", chip8->PC);
@@ -62,11 +65,21 @@ int main(int argc, char* argv[]) {
     }
 
     bool running = true;
+    Uint32 last_timer_update = SDL_GetTicks();
+    Uint32 last_frame = SDL_GetTicks();
+
     while (running) {
-        running = display_process_events(chip8);
-        display_render(display, chip8);
-        audio_update(audio, chip8->sound_timer);
-        SDL_Delay(16);
+        Uint32 now = SDL_GetTicks();
+        uint32_t elapsed_ms = now - last_timer_update;
+        last_timer_update = now;
+
+        running = run_frame(chip8, display, audio, elapsed_ms);
+
+        Uint32 frame_time = SDL_GetTicks() - last_frame;
+        if (frame_time < TARGET_FRAME_MS) {
+            SDL_Delay(TARGET_FRAME_MS - frame_time);
+        }
+        last_frame = SDL_GetTicks();
     }
 
     audio_destroy(audio);

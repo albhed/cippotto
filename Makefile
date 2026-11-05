@@ -16,9 +16,12 @@ test:
 	@$(CC) $(CFLAGS) test/audio_test.c src/audio.c src/chip8.c -o test/test_audio $(LDFLAGS)
 	@cd test && SDL_AUDIODRIVER=dummy ./test_audio
 	@rm -f test/test_audio
+	@$(CC) $(CFLAGS) test/loop_test.c src/loop.c src/display.c src/chip8.c src/input.c src/audio.c -o test/test_loop $(LDFLAGS)
+	@cd test && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./test_loop
+	@rm -f test/test_loop
 
 build:
-	$(CC) $(CFLAGS) src/main.c src/chip8.c src/display.c src/input.c src/audio.c -o chip8 $(LDFLAGS)
+	$(CC) $(CFLAGS) src/main.c src/loop.c src/chip8.c src/display.c src/input.c src/audio.c -o chip8 $(LDFLAGS)
 
 clean:
-	rm -f chip8 test/test_chip8 test/test_display test/test_input test/test_audio
+	rm -f chip8 test/test_chip8 test/test_display test/test_input test/test_audio test/test_loop

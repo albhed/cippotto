@@ -258,18 +258,22 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                     chip->V[instruction.x] = (uint8_t)(vx - vy);
                     chip->V[0xF] = (vx >= vy) ? 1 : 0;
                     break;
-                case 0x6:
-                    chip->V[instruction.x] = vx >> 1;
-                    chip->V[0xF] = vx & 0x1;
+                case 0x6: {
+                    uint8_t shift_source = chip->quirks.quirk_shift_vy ? vy : vx;
+                    chip->V[instruction.x] = shift_source >> 1;
+                    chip->V[0xF] = shift_source & 0x1;
                     break;
+                }
                 case 0x7:
                     chip->V[instruction.x] = (uint8_t)(vy - vx);
                     chip->V[0xF] = (vy >= vx) ? 1 : 0;
                     break;
-                case 0xE:
-                    chip->V[instruction.x] = (uint8_t)(vx << 1);
-                    chip->V[0xF] = (vx & 0x80) ? 1 : 0;
+                case 0xE: {
+                    uint8_t shift_source = chip->quirks.quirk_shift_vy ? vy : vx;
+                    chip->V[instruction.x] = (uint8_t)(shift_source << 1);
+                    chip->V[0xF] = (shift_source & 0x80) ? 1 : 0;
                     break;
+                }
                 default:
                     printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
                     return UNIMPLEMENTED_INSTRUCTION;
@@ -280,7 +284,11 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
             chip->I = instruction.nnn;
             break;
         case 0xB:
-            chip->PC = instruction.nnn + chip->V[0x0];
+            if (chip->quirks.quirk_jump_vx) {
+                chip->PC = instruction.nn + chip->V[instruction.x];
+            } else {
+                chip->PC = instruction.nnn + chip->V[0x0];
+            }
             break;
         case 0xC:
             chip->V[instruction.x] = (uint8_t)(rand() & instruction.nn);
@@ -297,12 +305,16 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                 uint8_t sprite_byte = chip->memory[chip->I + row];
                 int pixel_y = origin_y + row;
 
-                if (pixel_y >= DISPLAY_HEIGHT) {
+                if (chip->quirks.quirk_wrap) {
+                    pixel_y %= DISPLAY_HEIGHT;
+                } else if (pixel_y >= DISPLAY_HEIGHT) {
                     continue;
                 }
                 for (int col = 0; col < 8; col++) {
                     int pixel_x = origin_x + col;
-                    if (pixel_x >= DISPLAY_WIDTH) {
+                    if (chip->quirks.quirk_wrap) {
+                        pixel_x %= DISPLAY_WIDTH;
+                    } else if (pixel_x >= DISPLAY_WIDTH) {
                         continue;
                     }
                     uint8_t sprite_pixel = (sprite_byte >> (7 - col)) & 0x1;
@@ -392,6 +404,10 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                         }
                         chip->memory[chip->I + i] = chip->V[i];
                     }
+
+                    if (chip->quirks.quirk_fx55_increment) {
+                        chip->I = (uint16_t)(chip->I + instruction.x + 1);
+                    }
                     break;
                 case 0x65:
                     for (int i = 0; i <= instruction.x; i++) {
@@ -399,6 +415,9 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                             break;
                         }
                         chip->V[i] = chip->memory[chip->I + i];
+                    }
+                    if (chip->quirks.quirk_fx55_increment) {
+                        chip->I = (uint16_t)(chip->I + instruction.x + 1);
                     }
                     break;
                 default:

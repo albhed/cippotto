@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../src/chip8.h"
 #include "../src/err.h"
 
@@ -1195,6 +1196,67 @@ void test_execute_8XYE_flag_zero(void) {
     free_chip8(chip8);
 }
 
+void test_execute_8XY6_quirk_shift_vy_uses_vy(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->quirks.quirk_shift_vy = true;
+    chip8->V[0xA] = 0x0F;
+    chip8->V[0xB] = 0xF0;
+
+    DecodedInstruction instruction = decode(0x8AB6);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x78);
+    assert(chip8->V[0xF] == 0x00);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XYE_quirk_shift_vy_uses_vy(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->quirks.quirk_shift_vy = true;
+    chip8->V[0xA] = 0x0F;
+    chip8->V[0xB] = 0xF0;
+
+    DecodedInstruction instruction = decode(0x8ABE);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0xE0);
+    assert(chip8->V[0xF] == 0x01);
+
+    free_chip8(chip8);
+}
+
+void test_execute_8XY6_quirk_shift_vy_changes_result_vs_default(void) {
+    Chip8* chip8_default = init_chip8();
+    Chip8* chip8_quirk = init_chip8();
+    assert(chip8_default != NULL);
+    assert(chip8_quirk != NULL);
+
+    chip8_default->V[0xA] = 0x0F;
+    chip8_default->V[0xB] = 0xF0;
+
+    chip8_quirk->quirks.quirk_shift_vy = true;
+    chip8_quirk->V[0xA] = 0x0F;
+    chip8_quirk->V[0xB] = 0xF0;
+
+    DecodedInstruction instruction = decode(0x8AB6);
+    int result_default = execute(chip8_default, instruction);
+    int result_quirk = execute(chip8_quirk, instruction);
+
+    assert(result_default == 0);
+    assert(result_quirk == 0);
+    assert(chip8_default->V[0xA] == 0x07);
+    assert(chip8_quirk->V[0xA] == 0x78);
+    assert(chip8_default->V[0xA] != chip8_quirk->V[0xA]);
+
+    free_chip8(chip8_default);
+    free_chip8(chip8_quirk);
+}
+
 void test_execute_BNNN(void) {
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
@@ -1207,6 +1269,49 @@ void test_execute_BNNN(void) {
     assert(chip8->PC == 0x305);
 
     free_chip8(chip8);
+}
+
+void test_execute_BNNN_quirk_jump_vx_uses_address_high_nibble_as_register(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->quirks.quirk_jump_vx = true;
+    chip8->V[0x0] = 0x01;
+    chip8->V[0x5] = 0x10;
+
+    DecodedInstruction instruction = decode(0xB5A3);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == 0x0A3 + 0x10);
+
+    free_chip8(chip8);
+}
+
+void test_execute_BNNN_quirk_jump_vx_differs_from_default(void) {
+    Chip8* chip8_default = init_chip8();
+    Chip8* chip8_quirk = init_chip8();
+    assert(chip8_default != NULL);
+    assert(chip8_quirk != NULL);
+
+    chip8_default->V[0x0] = 0x01;
+    chip8_default->V[0x5] = 0x10;
+
+    chip8_quirk->quirks.quirk_jump_vx = true;
+    chip8_quirk->V[0x0] = 0x01;
+    chip8_quirk->V[0x5] = 0x10;
+
+    DecodedInstruction instruction = decode(0xB5A3);
+    int result_default = execute(chip8_default, instruction);
+    int result_quirk = execute(chip8_quirk, instruction);
+    assert(result_default == 0);
+    assert(result_quirk == 0);
+
+    assert(chip8_default->PC == 0x5A3 + 0x01);
+    assert(chip8_quirk->PC == 0x0A3 + 0x10);
+    assert(chip8_default->PC != chip8_quirk->PC);
+
+    free_chip8(chip8_default);
+    free_chip8(chip8_quirk);
 }
 
 void test_execute_CXNN_full_mask_produces_varied_values(void) {
@@ -1416,6 +1521,109 @@ void test_execute_DXYN_zero_rows_no_crash(void) {
     }
 
     free_chip8(chip8);
+}
+
+void test_execute_DXYN_wrap_quirk_right_edge(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->quirks.quirk_wrap = true;
+    chip8->memory[0x300] = 0x0F;
+    chip8->I = 0x300;
+    chip8->V[0x4] = 60;
+    chip8->V[0x5] = 0;
+
+    DecodedInstruction instruction = decode(0xD451);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    for (int col = 0; col < 4; col++) {
+        assert(chip8->display[0 * DISPLAY_WIDTH + 60 + col] == 0);
+    }
+    for (int col = 0; col < 4; col++) {
+        assert(chip8->display[0 * DISPLAY_WIDTH + col] == 1);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_wrap_quirk_bottom_edge(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->quirks.quirk_wrap = true;
+    chip8->memory[0x300] = 0xFF;
+    chip8->memory[0x301] = 0xFF;
+    chip8->memory[0x302] = 0xFF;
+    chip8->memory[0x303] = 0xFF;
+    chip8->I = 0x300;
+    chip8->V[0x6] = 0;
+    chip8->V[0x7] = 31;
+
+    DecodedInstruction instruction = decode(0xD674);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xF] == 0);
+
+    for (int col = 0; col < 8; col++) {
+        assert(chip8->display[31 * DISPLAY_WIDTH + col] == 1);
+        assert(chip8->display[0 * DISPLAY_WIDTH + col] == 1);
+        assert(chip8->display[1 * DISPLAY_WIDTH + col] == 1);
+        assert(chip8->display[2 * DISPLAY_WIDTH + col] == 1);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_wrap_quirk_no_out_of_bounds(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->quirks.quirk_wrap = true;
+    for (int i = 0; i < 8; i++) {
+        chip8->memory[0x300 + i] = 0xFF;
+    }
+    chip8->I = 0x300;
+    chip8->V[0x8] = 250;
+    chip8->V[0x9] = 250;
+
+    DecodedInstruction instruction = decode(0xD898);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+
+    free_chip8(chip8);
+}
+
+void test_execute_DXYN_wrap_quirk_differs_from_default(void) {
+    Chip8* chip8_default = init_chip8();
+    Chip8* chip8_quirk = init_chip8();
+    assert(chip8_default != NULL);
+    assert(chip8_quirk != NULL);
+
+    chip8_default->memory[0x300] = 0xFF;
+    chip8_default->I = 0x300;
+    chip8_default->V[0x4] = 60;
+    chip8_default->V[0x5] = 0;
+
+    chip8_quirk->quirks.quirk_wrap = true;
+    chip8_quirk->memory[0x300] = 0xFF;
+    chip8_quirk->I = 0x300;
+    chip8_quirk->V[0x4] = 60;
+    chip8_quirk->V[0x5] = 0;
+
+    DecodedInstruction instruction = decode(0xD451);
+    int result_default = execute(chip8_default, instruction);
+    int result_quirk = execute(chip8_quirk, instruction);
+    assert(result_default == 0);
+    assert(result_quirk == 0);
+
+    int displays_differ = memcmp(chip8_default->display, chip8_quirk->display,
+                                  sizeof(chip8_default->display)) != 0;
+    assert(displays_differ);
+
+    free_chip8(chip8_default);
+    free_chip8(chip8_quirk);
 }
 
 void test_execute_EX9E_pressed(void) {
@@ -1830,6 +2038,216 @@ void test_execute_FX65_near_mem_size_does_not_read_out_of_bounds(void) {
     free_chip8(chip8);
 }
 
+void test_execute_FX55_quirk_increment_advances_I_by_x_plus_one(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0x11;
+
+    chip8->memory[PC_START] = 0xF0;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xF055);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[0x300] == 0x11);
+    assert(chip8->I == 0x301);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX55_quirk_increment_advances_I_by_x_plus_one_with_x3(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0x11;
+    chip8->V[0x1] = 0x22;
+    chip8->V[0x2] = 0x33;
+    chip8->V[0x3] = 0x44;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xF355);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[0x300] == 0x11);
+    assert(chip8->memory[0x301] == 0x22);
+    assert(chip8->memory[0x302] == 0x33);
+    assert(chip8->memory[0x303] == 0x44);
+    assert(chip8->I == 0x304);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX65_quirk_increment_advances_I_by_x_plus_one(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = 0x300;
+    chip8->memory[0x300] = 0xAA;
+
+    chip8->memory[PC_START] = 0xF0;
+    chip8->memory[PC_START + 1] = 0x65;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xF065);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0x0] == 0xAA);
+    assert(chip8->I == 0x301);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX65_quirk_increment_advances_I_by_x_plus_one_with_x3(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = 0x300;
+    chip8->memory[0x300] = 0xAA;
+    chip8->memory[0x301] = 0xBB;
+    chip8->memory[0x302] = 0xCC;
+    chip8->memory[0x303] = 0xDD;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x65;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xF365);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0x0] == 0xAA);
+    assert(chip8->V[0x1] == 0xBB);
+    assert(chip8->V[0x2] == 0xCC);
+    assert(chip8->V[0x3] == 0xDD);
+    assert(chip8->I == 0x304);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX55_quirk_increment_near_mem_size_does_not_write_out_of_bounds(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = MEM_SIZE - 2;
+    chip8->V[0x0] = 0x11;
+    chip8->V[0x1] = 0x22;
+    chip8->V[0x2] = 0x33;
+    chip8->V[0x3] = 0x44;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->memory[MEM_SIZE - 2] == 0x11);
+    assert(chip8->memory[MEM_SIZE - 1] == 0x22);
+    assert(chip8->I == (uint16_t)(MEM_SIZE - 2 + 3 + 1));
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX65_quirk_increment_near_mem_size_does_not_read_out_of_bounds(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = MEM_SIZE - 2;
+    chip8->memory[MEM_SIZE - 2] = 0x55;
+    chip8->memory[MEM_SIZE - 1] = 0x66;
+    chip8->V[0x2] = 0x99;
+    chip8->V[0x3] = 0xAA;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x65;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0x0] == 0x55);
+    assert(chip8->V[0x1] == 0x66);
+    assert(chip8->V[0x2] == 0x99);
+    assert(chip8->V[0x3] == 0xAA);
+    assert(chip8->I == (uint16_t)(MEM_SIZE - 2 + 3 + 1));
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX55_quirk_flag_changes_final_I_value(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0x11;
+    chip8->V[0x1] = 0x22;
+    chip8->V[0x2] = 0x33;
+    chip8->V[0x3] = 0x44;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    uint16_t i_without_quirk = chip8->I;
+    uint8_t mem_without_quirk[4];
+    memcpy(mem_without_quirk, &chip8->memory[0x300], 4);
+
+    free_chip8(chip8);
+
+    chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_fx55_increment = true;
+
+    chip8->I = 0x300;
+    chip8->V[0x0] = 0x11;
+    chip8->V[0x1] = 0x22;
+    chip8->V[0x2] = 0x33;
+    chip8->V[0x3] = 0x44;
+
+    chip8->memory[PC_START] = 0xF3;
+    chip8->memory[PC_START + 1] = 0x55;
+
+    fetched = fetch(chip8);
+    instruction = decode(fetched);
+
+    result = execute(chip8, instruction);
+    assert(result == 0);
+    uint16_t i_with_quirk = chip8->I;
+
+    assert(i_without_quirk == 0x300);
+    assert(i_with_quirk == 0x304);
+    assert(i_without_quirk != i_with_quirk);
+    assert(memcmp(mem_without_quirk, &chip8->memory[0x300], 4) == 0);
+
+    free_chip8(chip8);
+}
+
 static void run_cpu_cycles(Chip8* chip8, int max_cycles) {
     uint16_t prev_pc = 0xFFFF;
     for (int i = 0; i < max_cycles; i++) {
@@ -1946,7 +2364,12 @@ int main(void) {
     test_execute_8XY7_borrow();
     test_execute_8XYE_flag_one();
     test_execute_8XYE_flag_zero();
+    test_execute_8XY6_quirk_shift_vy_uses_vy();
+    test_execute_8XYE_quirk_shift_vy_uses_vy();
+    test_execute_8XY6_quirk_shift_vy_changes_result_vs_default();
     test_execute_BNNN();
+    test_execute_BNNN_quirk_jump_vx_uses_address_high_nibble_as_register();
+    test_execute_BNNN_quirk_jump_vx_differs_from_default();
     test_execute_CXNN_full_mask_produces_varied_values();
     test_execute_CXNN_partial_mask();
     test_execute_CXNN_zero_mask();
@@ -1957,6 +2380,10 @@ int main(void) {
     test_execute_DXYN_clipping_right_edge();
     test_execute_DXYN_clipping_bottom_edge();
     test_execute_DXYN_zero_rows_no_crash();
+    test_execute_DXYN_wrap_quirk_right_edge();
+    test_execute_DXYN_wrap_quirk_bottom_edge();
+    test_execute_DXYN_wrap_quirk_no_out_of_bounds();
+    test_execute_DXYN_wrap_quirk_differs_from_default();
     test_execute_EX9E_pressed();
     test_execute_EX9E_not_pressed();
     test_execute_EXA1_not_pressed();
@@ -1975,6 +2402,13 @@ int main(void) {
     test_execute_FX65_loads_registers_from_memory();
     test_execute_FX55_near_mem_size_does_not_write_out_of_bounds();
     test_execute_FX65_near_mem_size_does_not_read_out_of_bounds();
+    test_execute_FX55_quirk_increment_advances_I_by_x_plus_one();
+    test_execute_FX55_quirk_increment_advances_I_by_x_plus_one_with_x3();
+    test_execute_FX65_quirk_increment_advances_I_by_x_plus_one();
+    test_execute_FX65_quirk_increment_advances_I_by_x_plus_one_with_x3();
+    test_execute_FX55_quirk_increment_near_mem_size_does_not_write_out_of_bounds();
+    test_execute_FX65_quirk_increment_near_mem_size_does_not_read_out_of_bounds();
+    test_execute_FX55_quirk_flag_changes_final_I_value();
     test_execute_ibm_logo_rom();
     printf("All tests passed!\n");
     return 0;

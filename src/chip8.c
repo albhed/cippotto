@@ -52,6 +52,7 @@ Chip8* init_chip8(void) {
     memcpy(chip8->memory, fontset, 80);
 
     memset(chip8->display, 0, sizeof(chip8->display));
+    memset(chip8->keys, 0, sizeof(chip8->keys));
 
     return chip8;
 }

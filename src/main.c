@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
     bool running = true;
     while (running) {
-        running = display_process_events();
+        running = display_process_events(chip8);
         display_render(display, chip8);
         SDL_Delay(16);
     }

@@ -9,6 +9,7 @@
 #define NUM_REGISTERS 16
 #define DISPLAY_WIDTH 64
 #define DISPLAY_HEIGHT 32
+#define NUM_KEYS 16
 
 typedef struct {
     uint8_t memory[MEM_SIZE];
@@ -18,6 +19,7 @@ typedef struct {
     uint16_t stack[16];
     uint8_t SP;
     uint8_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT];
+    uint8_t keys[NUM_KEYS];
 } Chip8;
 
 typedef struct {

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "display.h"
+#include "input.h"
 
 Display* display_init(void) {
     Display* display = malloc(sizeof(Display));
@@ -61,12 +62,13 @@ void display_render(Display* display, const Chip8* chip8) {
     SDL_RenderPresent(display->renderer);
 }
 
-bool display_process_events(void) {
+bool display_process_events(Chip8* chip8) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             return false;
         }
+        input_handle_event(chip8, &event);
     }
     return true;
 }

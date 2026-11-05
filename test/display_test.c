@@ -21,8 +21,13 @@ static void test_display_process_events_continue_when_no_event(void) {
     SDL_PumpEvents();
     SDL_FlushEvent(SDL_QUIT);
 
-    bool running = display_process_events();
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    bool running = display_process_events(chip8);
     assert(running == true);
+
+    free_chip8(chip8);
 }
 
 static void test_display_process_events_stops_on_quit(void) {
@@ -30,8 +35,13 @@ static void test_display_process_events_stops_on_quit(void) {
     quit_event.type = SDL_QUIT;
     SDL_PushEvent(&quit_event);
 
-    bool running = display_process_events();
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    bool running = display_process_events(chip8);
     assert(running == false);
+
+    free_chip8(chip8);
 }
 
 static void test_display_render_draws_pixel_at_correct_position(void) {

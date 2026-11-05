@@ -15,6 +15,6 @@ typedef struct {
 Display* display_init(void);
 void display_destroy(Display* display);
 void display_render(Display* display, const Chip8* chip8);
-bool display_process_events(void);
+bool display_process_events(Chip8* chip8);
 
 #endif /* DISPLAY_H */

@@ -30,6 +30,15 @@ void test_init_chip8_index_register(void) {
     free_chip8(chip8);
 }
 
+void test_init_chip8_keys(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    for (int i = 0; i < NUM_KEYS; i++) {
+        assert(chip8->keys[i] == 0);
+    }
+    free_chip8(chip8);
+}
+
 void test_init_chip8_memory_linked(void) {
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
@@ -1350,6 +1359,7 @@ int main(void) {
     test_init_chip8_pc();
     test_init_chip8_registers();
     test_init_chip8_index_register();
+    test_init_chip8_keys();
     test_init_chip8_memory_linked();
     test_mem_size();
     test_pc();

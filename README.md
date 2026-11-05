@@ -1,6 +1,7 @@
 # cippotto
 
 [![CI](https://github.com/albhed/cippotto/actions/workflows/ci.yml/badge.svg)](https://github.com/albhed/cippotto/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/albhed/cippotto)](LICENSE)
 
 A CHIP-8 emulator written in C (C99) with SDL2.
 

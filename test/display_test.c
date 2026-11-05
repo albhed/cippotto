@@ -44,6 +44,58 @@ static void test_display_process_events_stops_on_quit(void) {
     free_chip8(chip8);
 }
 
+/*
+ * Gli eventi SDL_KEYDOWN/KEYUP vengono scartati da SDL_PumpEvents quando
+ * non esiste una finestra con il focus: per questi due test serve quindi
+ * una Display attiva, a differenza dei test su SDL_QUIT.
+ */
+static void test_display_process_events_stops_on_escape_key(void) {
+    Display* display = display_init();
+    assert(display != NULL);
+
+    SDL_PumpEvents();
+    SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+
+    SDL_Event key_event;
+    SDL_zero(key_event);
+    key_event.type = SDL_KEYDOWN;
+    key_event.key.keysym.scancode = SDL_SCANCODE_ESCAPE;
+    SDL_PushEvent(&key_event);
+
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    bool running = display_process_events(chip8);
+    assert(running == false);
+
+    free_chip8(chip8);
+    display_destroy(display);
+}
+
+static void test_display_process_events_continues_on_chip8_key(void) {
+    Display* display = display_init();
+    assert(display != NULL);
+
+    SDL_PumpEvents();
+    SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+
+    SDL_Event key_event;
+    SDL_zero(key_event);
+    key_event.type = SDL_KEYDOWN;
+    key_event.key.keysym.scancode = SDL_SCANCODE_1;
+    SDL_PushEvent(&key_event);
+
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    bool running = display_process_events(chip8);
+    assert(running == true);
+    assert(chip8->keys[0x1] == 1);
+
+    free_chip8(chip8);
+    display_destroy(display);
+}
+
 static void test_display_render_draws_pixel_at_correct_position(void) {
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
@@ -164,6 +216,8 @@ int main(void) {
     test_display_init_creates_window_and_renderer();
     test_display_process_events_continue_when_no_event();
     test_display_process_events_stops_on_quit();
+    test_display_process_events_stops_on_escape_key();
+    test_display_process_events_continues_on_chip8_key();
     test_display_render_draws_pixel_at_correct_position();
     test_display_renders_ibm_logo_rom();
 

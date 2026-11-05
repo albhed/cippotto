@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include "chip8.h"
 #include "display.h"
+#include "audio.h"
 #include "err.h"
 
 static void print_cpu_state(const Chip8* chip8) {
@@ -14,7 +15,7 @@ static void print_cpu_state(const Chip8* chip8) {
 }
 
 int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         printf("Error: Could not initialize SDL: %s\n", SDL_GetError());
         return ERR_SDL_INIT_FAILED;
     }
@@ -51,13 +52,24 @@ int main(int argc, char* argv[]) {
         return ERR_DISPLAY_INIT_FAILED;
     }
 
+    Audio* audio = audio_init();
+    if (audio == NULL) {
+        printf("Error: Could not initialize audio\n");
+        display_destroy(display);
+        free_chip8(chip8);
+        SDL_Quit();
+        return ERR_AUDIO_INIT_FAILED;
+    }
+
     bool running = true;
     while (running) {
         running = display_process_events(chip8);
         display_render(display, chip8);
+        audio_update(audio, chip8->sound_timer);
         SDL_Delay(16);
     }
 
+    audio_destroy(audio);
     display_destroy(display);
     free_chip8(chip8);
     SDL_Quit();

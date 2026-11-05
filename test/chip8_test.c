@@ -30,6 +30,14 @@ void test_init_chip8_index_register(void) {
     free_chip8(chip8);
 }
 
+void test_init_chip8_timers(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->delay_timer == 0);
+    assert(chip8->sound_timer == 0);
+    free_chip8(chip8);
+}
+
 void test_init_chip8_keys(void) {
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
@@ -143,6 +151,113 @@ void test_clear_display(void) {
     }
 
     print_display(chip8);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_decrements_when_above_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 5;
+    chip8->sound_timer = 5;
+
+    update_timers(chip8, 17);
+
+    assert(chip8->delay_timer == 4);
+    assert(chip8->sound_timer == 4);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_never_goes_below_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 0;
+    chip8->sound_timer = 0;
+
+    update_timers(chip8, 1000);
+
+    assert(chip8->delay_timer == 0);
+    assert(chip8->sound_timer == 0);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_small_elapsed_does_not_decrement_yet(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 10;
+
+    update_timers(chip8, 1);
+
+    assert(chip8->delay_timer == 10);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_simulated_half_second_reaches_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 30;
+
+    update_timers(chip8, 500);
+
+    assert(chip8->delay_timer == 0);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_multiple_small_calls_reach_zero(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 30;
+
+    for (int i = 0; i < 30; i++) {
+        update_timers(chip8, 17);
+    }
+
+    assert(chip8->delay_timer == 0);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_handles_multiple_ticks_in_one_call(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 10;
+
+    update_timers(chip8, 100);
+
+    assert(chip8->delay_timer == 4);
+
+    free_chip8(chip8);
+}
+
+void test_update_timers_independent_of_cpu_cycles(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 10;
+    chip8->memory[PC_START] = 0x00;
+    chip8->memory[PC_START + 1] = 0xE0;
+
+    for (int i = 0; i < 1000; i++) {
+        uint16_t opcode = fetch(chip8);
+        DecodedInstruction instruction = decode(opcode);
+        execute(chip8, instruction);
+        chip8->PC = PC_START;
+    }
+
+    assert(chip8->delay_timer == 10);
+
+    update_timers(chip8, 500);
+    assert(chip8->delay_timer == 0);
 
     free_chip8(chip8);
 }
@@ -1489,6 +1604,7 @@ int main(void) {
     test_init_chip8_pc();
     test_init_chip8_registers();
     test_init_chip8_index_register();
+    test_init_chip8_timers();
     test_init_chip8_keys();
     test_init_chip8_memory_linked();
     test_mem_size();
@@ -1498,6 +1614,13 @@ int main(void) {
     test_font();
     test_stack_push_pop();
     test_clear_display();
+    test_update_timers_decrements_when_above_zero();
+    test_update_timers_never_goes_below_zero();
+    test_update_timers_small_elapsed_does_not_decrement_yet();
+    test_update_timers_simulated_half_second_reaches_zero();
+    test_update_timers_multiple_small_calls_reach_zero();
+    test_update_timers_handles_multiple_ticks_in_one_call();
+    test_update_timers_independent_of_cpu_cycles();
     test_fetch();
     test_decode();
     test_execute_00E0();

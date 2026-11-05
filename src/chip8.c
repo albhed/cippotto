@@ -54,6 +54,10 @@ Chip8* init_chip8(void) {
     memset(chip8->display, 0, sizeof(chip8->display));
     memset(chip8->keys, 0, sizeof(chip8->keys));
 
+    chip8->delay_timer = 0;
+    chip8->sound_timer = 0;
+    chip8->timer_accumulator_us = 0;
+
     return chip8;
 }
 
@@ -129,6 +133,21 @@ StackPopResult* stack_pop(Chip8* chip) {
 int clear_display(Chip8* chip) {
     memset(chip->display, 0, sizeof(chip->display));
     return 0;
+}
+
+void update_timers(Chip8* chip, uint32_t elapsed_ms) {
+    chip->timer_accumulator_us += elapsed_ms * 1000u;
+
+    while (chip->timer_accumulator_us >= TIMER_INTERVAL_US) {
+        chip->timer_accumulator_us -= TIMER_INTERVAL_US;
+
+        if (chip->delay_timer > 0) {
+            chip->delay_timer--;
+        }
+        if (chip->sound_timer > 0) {
+            chip->sound_timer--;
+        }
+    }
 }
 
 uint16_t fetch(Chip8* chip) {

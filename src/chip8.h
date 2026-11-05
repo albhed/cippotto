@@ -10,6 +10,8 @@
 #define DISPLAY_WIDTH 64
 #define DISPLAY_HEIGHT 32
 #define NUM_KEYS 16
+#define TIMER_HZ 60
+#define TIMER_INTERVAL_US (1000000 / TIMER_HZ)
 
 typedef struct {
     uint8_t memory[MEM_SIZE];
@@ -20,6 +22,9 @@ typedef struct {
     uint8_t SP;
     uint8_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT];
     uint8_t keys[NUM_KEYS];
+    uint8_t delay_timer;
+    uint8_t sound_timer;
+    uint32_t timer_accumulator_us;
 } Chip8;
 
 typedef struct {
@@ -44,6 +49,7 @@ int stack_push(Chip8* chip, uint16_t value);
 StackPopResult* stack_pop(Chip8* chip);
 
 int clear_display(Chip8* chip);
+void update_timers(Chip8* chip, uint32_t elapsed_ms);
 uint16_t fetch(Chip8* chip);
 DecodedInstruction decode(uint16_t opcode);
 int execute(Chip8* chip, DecodedInstruction instruction);

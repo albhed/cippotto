@@ -28,3 +28,27 @@ QuirkConfig parse_quirk_args(int argc, char** argv, const char** rom_path) {
 
     return config;
 }
+
+bool quirk_help_requested(int argc, char** argv) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const char* quirk_help_text(void) {
+    return
+        "Usage: chip8 [options] <rom_path>\n"
+        "\n"
+        "Options:\n"
+        "  --help, -h               Show this help message and exit\n"
+        "  --quirk-shift-vy         Use VY instead of VX as shift source for 8XY6/8XYE\n"
+        "  --quirk-wrap             Wrap sprites around screen edges instead of clipping\n"
+        "  --quirk-jump-vx          Use VX as offset register for BNNN jump (BXNN behavior)\n"
+        "  --quirk-fx55-increment   Increment I register after FX55/FX65 memory operations\n"
+        "\n"
+        "Arguments:\n"
+        "  <rom_path>               Path to the CHIP-8 ROM file to load\n";
+}

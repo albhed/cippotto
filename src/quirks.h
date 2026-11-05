@@ -12,4 +12,7 @@ typedef struct {
 
 QuirkConfig parse_quirk_args(int argc, char** argv, const char** rom_path);
 
+bool quirk_help_requested(int argc, char** argv);
+const char* quirk_help_text(void);
+
 #endif /* QUIRKS_H */

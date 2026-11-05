@@ -120,6 +120,51 @@ static void test_parse_quirk_args_unknown_argument_treated_as_rom_path(void) {
     assert(strcmp(rom_path, "--unknown-flag") == 0);
 }
 
+static void test_quirk_help_requested_absent(void) {
+    char* argv[] = {"chip8", "--quirk-wrap", "roms/game.ch8"};
+    assert(quirk_help_requested(3, argv) == false);
+}
+
+static void test_quirk_help_requested_no_args_at_all(void) {
+    char* argv[] = {"chip8"};
+    assert(quirk_help_requested(1, argv) == false);
+}
+
+static void test_quirk_help_requested_long_flag_alone(void) {
+    char* argv[] = {"chip8", "--help"};
+    assert(quirk_help_requested(2, argv) == true);
+}
+
+static void test_quirk_help_requested_short_flag_alone(void) {
+    char* argv[] = {"chip8", "-h"};
+    assert(quirk_help_requested(2, argv) == true);
+}
+
+static void test_quirk_help_requested_after_other_flags(void) {
+    char* argv[] = {"chip8", "--quirk-wrap", "--help"};
+    assert(quirk_help_requested(3, argv) == true);
+}
+
+static void test_quirk_help_requested_before_other_flags(void) {
+    char* argv[] = {"chip8", "--help", "--quirk-wrap"};
+    assert(quirk_help_requested(3, argv) == true);
+}
+
+static void test_quirk_help_text_contains_all_quirk_flag_names(void) {
+    const char* text = quirk_help_text();
+
+    assert(strstr(text, "--quirk-shift-vy") != NULL);
+    assert(strstr(text, "--quirk-wrap") != NULL);
+    assert(strstr(text, "--quirk-jump-vx") != NULL);
+    assert(strstr(text, "--quirk-fx55-increment") != NULL);
+}
+
+static void test_quirk_help_text_mentions_rom_path(void) {
+    const char* text = quirk_help_text();
+
+    assert(strstr(text, "rom_path") != NULL);
+}
+
 int main(void) {
     printf("Running quirks tests...\n");
     test_parse_quirk_args_no_flags_uses_defaults();
@@ -131,6 +176,14 @@ int main(void) {
     test_parse_quirk_args_multiple_flags();
     test_parse_quirk_args_all_flags();
     test_parse_quirk_args_unknown_argument_treated_as_rom_path();
+    test_quirk_help_requested_absent();
+    test_quirk_help_requested_no_args_at_all();
+    test_quirk_help_requested_long_flag_alone();
+    test_quirk_help_requested_short_flag_alone();
+    test_quirk_help_requested_after_other_flags();
+    test_quirk_help_requested_before_other_flags();
+    test_quirk_help_text_contains_all_quirk_flag_names();
+    test_quirk_help_text_mentions_rom_path();
     printf("All quirks tests passed!\n");
     return 0;
 }

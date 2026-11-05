@@ -19,6 +19,11 @@ static void print_cpu_state(const Chip8* chip8) {
 }
 
 int main(int argc, char* argv[]) {
+    if (quirk_help_requested(argc, argv)) {
+        printf("%s", quirk_help_text());
+        return 0;
+    }
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         printf("Error: Could not initialize SDL: %s\n", SDL_GetError());
         return ERR_SDL_INIT_FAILED;

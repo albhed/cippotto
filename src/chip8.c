@@ -347,6 +347,15 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
                     }
                     break;
                 }
+                case 0x07:
+                    chip->V[instruction.x] = chip->delay_timer;
+                    break;
+                case 0x15:
+                    chip->delay_timer = chip->V[instruction.x];
+                    break;
+                case 0x18:
+                    chip->sound_timer = chip->V[instruction.x];
+                    break;
                 default:
                     printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
                     return UNIMPLEMENTED_INSTRUCTION;

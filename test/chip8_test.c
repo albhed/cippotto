@@ -1548,6 +1548,94 @@ void test_execute_FX0A_resolves_on_key_press(void) {
     free_chip8(chip8);
 }
 
+void test_execute_FX07_reads_delay_timer(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->delay_timer = 0x2A;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x07;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xFA07);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xA] == 0x2A);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX15_writes_delay_timer(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x2A;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x15;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xFA15);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->delay_timer == 0x2A);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX18_writes_sound_timer(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x2A;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x18;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xFA18);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->sound_timer == 0x2A);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX15_then_update_timers_then_FX07_shows_decrement(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 10;
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x15;
+    chip8->memory[PC_START + 2] = 0xFB;
+    chip8->memory[PC_START + 3] = 0x07;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->delay_timer == 10);
+
+    update_timers(chip8, 100);
+
+    fetched = fetch(chip8);
+    instruction = decode(fetched);
+    result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->V[0xB] < 10);
+
+    free_chip8(chip8);
+}
+
 static void run_cpu_cycles(Chip8* chip8, int max_cycles) {
     uint16_t prev_pc = 0xFFFF;
     for (int i = 0; i < max_cycles; i++) {
@@ -1681,6 +1769,10 @@ int main(void) {
     test_execute_EXA1_pressed();
     test_execute_FX0A_waits_when_no_key_pressed();
     test_execute_FX0A_resolves_on_key_press();
+    test_execute_FX07_reads_delay_timer();
+    test_execute_FX15_writes_delay_timer();
+    test_execute_FX18_writes_sound_timer();
+    test_execute_FX15_then_update_timers_then_FX07_shows_decrement();
     test_execute_ibm_logo_rom();
     printf("All tests passed!\n");
     return 0;

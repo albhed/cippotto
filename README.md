@@ -1,5 +1,7 @@
 # cippotto
 
+[![CI](https://github.com/albhed/cippotto/actions/workflows/ci.yml/badge.svg)](https://github.com/albhed/cippotto/actions/workflows/ci.yml)
+
 A CHIP-8 emulator written in C (C99) with SDL2.
 
 ![IBM logo test ROM running in the emulator](docs/ibm_logo.png)

@@ -68,8 +68,6 @@ bool display_process_events(Chip8* chip8) {
         if (event.type == SDL_QUIT) {
             return false;
         }
-        /* ESC non e' mappato sulla griglia CHIP-8 (vedi input.c): usato
-         * come scorciatoia per chiudere ordinatamente l'emulatore. */
         if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
             return false;
         }

@@ -58,6 +58,13 @@ Chip8* init_chip8(void) {
     chip8->sound_timer = 0;
     chip8->timer_accumulator_us = 0;
 
+    chip8->quirks = (QuirkConfig){
+        .quirk_shift_vy = false,
+        .quirk_wrap = false,
+        .quirk_jump_vx = false,
+        .quirk_fx55_increment = false,
+    };
+
     return chip8;
 }
 

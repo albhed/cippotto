@@ -2,6 +2,7 @@
 #define CHIP8_H
 
 #include <stdint.h>
+#include "quirks.h"
 
 #define MEM_SIZE 4096
 #define PC_START 0x200
@@ -26,6 +27,7 @@ typedef struct {
     uint8_t delay_timer;
     uint8_t sound_timer;
     uint32_t timer_accumulator_us;
+    QuirkConfig quirks;
 } Chip8;
 
 typedef struct {

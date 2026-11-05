@@ -6,6 +6,7 @@
 #include "display.h"
 #include "audio.h"
 #include "loop.h"
+#include "quirks.h"
 #include "err.h"
 
 #define TARGET_FRAME_MS 16
@@ -23,7 +24,10 @@ int main(int argc, char* argv[]) {
         return ERR_SDL_INIT_FAILED;
     }
 
-    if (argc < 2) {
+    const char* rom_path = NULL;
+    QuirkConfig quirks = parse_quirk_args(argc, argv, &rom_path);
+
+    if (rom_path == NULL) {
         printf("Error: No ROM file specified\n");
         SDL_Quit();
         return NO_ROM_SELECTED;
@@ -37,7 +41,9 @@ int main(int argc, char* argv[]) {
         return ERR_MEMORY_ALLOCATION_FAILED;
     }
 
-    int load_rom_result = load_rom(chip8, argv[1]);
+    chip8->quirks = quirks;
+
+    int load_rom_result = load_rom(chip8, rom_path);
     if (load_rom_result != 0) {
         printf("Error: Could not load ROM\n");
         free_chip8(chip8);

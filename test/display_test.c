@@ -44,11 +44,6 @@ static void test_display_process_events_stops_on_quit(void) {
     free_chip8(chip8);
 }
 
-/*
- * Gli eventi SDL_KEYDOWN/KEYUP vengono scartati da SDL_PumpEvents quando
- * non esiste una finestra con il focus: per questi due test serve quindi
- * una Display attiva, a differenza dei test su SDL_QUIT.
- */
 static void test_display_process_events_stops_on_escape_key(void) {
     Display* display = display_init();
     assert(display != NULL);

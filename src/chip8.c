@@ -291,6 +291,48 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
             chip->V[0xF] = collision;
             break;
         }
+        case 0xE: {
+            uint8_t vx = chip->V[instruction.x];
+            uint8_t key_pressed = (vx < NUM_KEYS) && chip->keys[vx];
+            switch (instruction.nn) {
+                case 0x9E:
+                    if (key_pressed) {
+                        chip->PC += 2;
+                    }
+                    break;
+                case 0xA1:
+                    if (!key_pressed) {
+                        chip->PC += 2;
+                    }
+                    break;
+                default:
+                    printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
+                    return UNIMPLEMENTED_INSTRUCTION;
+            }
+            break;
+        }
+        case 0xF:
+            switch (instruction.nn) {
+                case 0x0A: {
+                    int pressed_key = -1;
+                    for (int i = 0; i < NUM_KEYS; i++) {
+                        if (chip->keys[i]) {
+                            pressed_key = i;
+                            break;
+                        }
+                    }
+                    if (pressed_key < 0) {
+                        chip->PC -= 2;
+                    } else {
+                        chip->V[instruction.x] = (uint8_t)pressed_key;
+                    }
+                    break;
+                }
+                default:
+                    printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
+                    return UNIMPLEMENTED_INSTRUCTION;
+            }
+            break;
         default:
             printf("Error: Unimplemented opcode: 0x%X\n", instruction.nibble);
             return UNIMPLEMENTED_INSTRUCTION;

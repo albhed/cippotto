@@ -1303,6 +1303,136 @@ void test_execute_DXYN_zero_rows_no_crash(void) {
     free_chip8(chip8);
 }
 
+void test_execute_EX9E_pressed(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x5;
+    chip8->keys[0x5] = 1;
+    chip8->memory[PC_START] = 0xEA;
+    chip8->memory[PC_START + 1] = 0x9E;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xEA9E);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_EX9E_not_pressed(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x5;
+    chip8->keys[0x5] = 0;
+    chip8->memory[PC_START] = 0xEA;
+    chip8->memory[PC_START + 1] = 0x9E;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xEA9E);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    free_chip8(chip8);
+}
+
+void test_execute_EXA1_not_pressed(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x5;
+    chip8->keys[0x5] = 0;
+    chip8->memory[PC_START] = 0xEA;
+    chip8->memory[PC_START + 1] = 0xA1;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xEAA1);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 4);
+
+    free_chip8(chip8);
+}
+
+void test_execute_EXA1_pressed(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->V[0xA] = 0x5;
+    chip8->keys[0x5] = 1;
+    chip8->memory[PC_START] = 0xEA;
+    chip8->memory[PC_START + 1] = 0xA1;
+
+    int fetched = fetch(chip8);
+    assert(fetched == 0xEAA1);
+    DecodedInstruction instruction = decode(fetched);
+
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX0A_waits_when_no_key_pressed(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x0A;
+
+    for (int i = 0; i < 3; i++) {
+        int fetched = fetch(chip8);
+        assert(fetched == 0xFA0A);
+        assert(chip8->PC == PC_START + 2);
+        DecodedInstruction instruction = decode(fetched);
+
+        int result = execute(chip8, instruction);
+        assert(result == 0);
+        assert(chip8->PC == PC_START);
+        assert(chip8->V[0xA] == 0);
+    }
+
+    free_chip8(chip8);
+}
+
+void test_execute_FX0A_resolves_on_key_press(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+
+    chip8->memory[PC_START] = 0xFA;
+    chip8->memory[PC_START + 1] = 0x0A;
+
+    int fetched = fetch(chip8);
+    DecodedInstruction instruction = decode(fetched);
+    int result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START);
+
+    chip8->keys[0x7] = 1;
+
+    fetched = fetch(chip8);
+    assert(fetched == 0xFA0A);
+    assert(chip8->PC == PC_START + 2);
+    instruction = decode(fetched);
+
+    result = execute(chip8, instruction);
+    assert(result == 0);
+    assert(chip8->PC == PC_START + 2);
+    assert(chip8->V[0xA] == 0x7);
+
+    free_chip8(chip8);
+}
+
 static void run_cpu_cycles(Chip8* chip8, int max_cycles) {
     uint16_t prev_pc = 0xFFFF;
     for (int i = 0; i < max_cycles; i++) {
@@ -1422,6 +1552,12 @@ int main(void) {
     test_execute_DXYN_clipping_right_edge();
     test_execute_DXYN_clipping_bottom_edge();
     test_execute_DXYN_zero_rows_no_crash();
+    test_execute_EX9E_pressed();
+    test_execute_EX9E_not_pressed();
+    test_execute_EXA1_not_pressed();
+    test_execute_EXA1_pressed();
+    test_execute_FX0A_waits_when_no_key_pressed();
+    test_execute_FX0A_resolves_on_key_press();
     test_execute_ibm_logo_rom();
     printf("All tests passed!\n");
     return 0;

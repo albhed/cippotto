@@ -1,6 +1,28 @@
 :root {
     --main-bg-color: #04151F;
-    --main-text-color: #16DB65;
+    --secondary-bg-color: #000;
+    --main-text-color: #fff5ee;
+    --secondary-text-color: #1a4d2e;
+    --accent: #A3E7FC;
+    --accent-secondary: #C00;
+    --neon-green-primary-color: #2e8b57;
+    --neon-green-secondary-color: #228b22;
+}
+
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    color: var(--main-text-color);
+    text-shadow: 
+      0 0 5px var(--neon-green-primary-color),
+      0 0 10px var(--neon-green-primary-color),
+      0 0 20px var(--neon-green-primary-color),
+      0 0 40px var(--neon-green-secondary-color),
+      0 0 80px var(--neon-green-secondary-color);
+  }
+  20%, 24%, 55% {
+    color: var(--secondary-text-color);
+    text-shadow: none;
+  }
 }
 
 body {
@@ -10,21 +32,37 @@ body {
     margin: auto;
     padding: 1.5rem;
     text-align: center;
+    text-shadow: 
+      0 0 5px var(--neon-green-primary-color),
+      0 0 10px var(--neon-green-primary-color),
+      0 0 20px var(--neon-green-primary-color),
+      0 0 40px var(--neon-green-secondary-color),
+      0 0 80px var(--neon-green-secondary-color);
+   
+}
+
+h1 {
+    animation: neon-flicker 3s infinite alternate;
 }
 
 a {
-    color: #A3E7FC;
+    color: var(--accent);
 }
 
 a:active {
-    color: #C00;
+    color: var(--accent-secondary);
 }
 
 canvas {
-    background: #000;
+    background: var(--secondary-bg-color);
     display: inline-block;
     margin-top: 1rem;
     image-rendering: pixelated;
+    border-radius: 85px;
+    box-shadow: 
+    0 0 25px var(--neon-green-primary-color),
+    0 0 30px var(--neon-green-primary-color),
+    0 0 80px var(--neon-green-secondary-color);
 }
 
 table {
@@ -36,17 +74,16 @@ table {
 table,
 th,
 td {
-    border: 1px solid #999;
+    border: 1px solid var(--neon-green-primary-color);
     padding: 0.3rem 0.6rem;
 }
 
 pre {
     padding: 0.6rem;
-    color:#4361EE;
+    color: var(--accent);
     font-weight: bolder;
     font-size: 16px;
 }
-
 
 form {
     display: inline-block;
@@ -64,4 +101,36 @@ fieldset label {
 
 label {
     margin: 0.2rem 0;
+}
+
+button {
+  background-color: var(--main-bg-color);
+  color: var(--neon-green-primary-color);
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 20px;
+  border: 1px solid var(--neon-green-primary-color);
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(46, 139, 87, 0.4);
+  text-shadow: 0 0 3px rgba(46, 139, 87, 0.6);
+  
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #1e3328;
+  color: #fff5ee;
+  border-color: #3cb371;
+  box-shadow: 0 0 10px rgba(60, 179, 113, 0.8), 
+              0 0 20px rgba(46, 139, 87, 0.4);
+  text-shadow: 0 0 5px #fff5ee, 
+               0 0 10px #2e8b57;
+}
+
+button:active {
+  background-color: #2e8b57;
+  color: #121a16;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
 }

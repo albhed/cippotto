@@ -63,7 +63,7 @@
 <p>The original CHIP-8 keypad is mapped to the left side of a QWERTY keyboard:</p>
 
 <pre>
-CHIP-8          Keyboard
+ CHIP-8          Keyboard
 1 2 3 C         1 2 3 4
 4 5 6 D   -->   Q W E R
 7 8 9 E         A S D F
@@ -113,7 +113,63 @@ A 0 B F         Z X C V
 </table>
 
 <script>
+function playBootUpSound(ctx) {
+  var now = ctx.currentTime;
+  var notes = [220, 330, 440, 660];
+  notes.forEach(function (freq, i) {
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    var start = now + i * 0.09;
+    var end = start + 0.12;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.15, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(end + 0.02);
+  });
+}
+
+function playNeonBuzz(ctx, startTime, duration) {
+  var osc = ctx.createOscillator();
+  var gain = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.value = 110;
+
+  var lfo = ctx.createOscillator();
+  var lfoGain = ctx.createGain();
+  lfo.frequency.value = 55;
+  lfoGain.gain.value = 0.05;
+  lfo.connect(lfoGain);
+  lfoGain.connect(gain.gain);
+
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.linearRampToValueAtTime(0.06, startTime + 0.05);
+  gain.gain.setValueAtTime(0.06, startTime + duration - 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(startTime);
+  lfo.start(startTime);
+  osc.stop(startTime + duration);
+  lfo.stop(startTime + duration);
+}
+
 document.getElementById('start-button').addEventListener('click', function () {
+  try {
+    var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    var audioCtx = new AudioContextClass();
+    playBootUpSound(audioCtx);
+    playNeonBuzz(audioCtx, audioCtx.currentTime + 0.45, 1.1);
+  } catch (e) {
+    console.warn("browser do not support this kind of audio feature")
+  }
+
   var romSelect = document.getElementById('rom-select');
   var romPath = 'roms/' + romSelect.value;
 

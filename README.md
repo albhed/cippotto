@@ -5,6 +5,10 @@
 
 A CHIP-8 emulator written in C (C99) with SDL2.
 
+## Play in your browser
+
+A WebAssembly build runs directly on GitHub Pages — no install needed: **[albhed.github.io/cippotto](https://albhed.github.io/cippotto/)**
+
 ![IBM logo test ROM running in the emulator](docs/ibm_logo.png)
 ![Corax test results](docs/corax_test.png)
 

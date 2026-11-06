@@ -59,6 +59,9 @@
 </form>
 
 <canvas id="canvas" tabindex="-1" width="640" height="320"></canvas>
+<p>
+  <button type="button" id="reload-button" style="display:none;">⟲ Choose another ROM</button>
+</p>
 
 <h2>Controls</h2>
 
@@ -141,6 +144,7 @@ document.getElementById('start-button').addEventListener('click', function () {
   };
 
   this.disabled = true;
+  document.getElementById('reload-button').style.display = '';
 
   var script = document.createElement('script');
   script.src = 'chip8.js';
@@ -151,6 +155,10 @@ document.getElementById('start-button').addEventListener('click', function () {
 
   canvas.focus();
 }, { once: true });
+
+document.getElementById('reload-button').addEventListener('click', function () {
+  location.reload();
+});
 </script>
 
 </body>

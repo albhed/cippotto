@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>cippotto — CHIP-8 emulator demo</title>
+<style>
+  body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  canvas { background: #000; display: block; margin-top: 1rem; image-rendering: pixelated; }
+  table { border-collapse: collapse; margin: 0.5rem 0; }
+  table, th, td { border: 1px solid #999; padding: 0.3rem 0.6rem; }
+  pre { background: #f0f0f0; padding: 0.6rem; }
+  fieldset { margin: 1rem 0; }
+  label { display: block; margin: 0.2rem 0; }
+</style>
+</head>
+<body>
+<h1>cippotto — CHIP-8 emulator demo</h1>
+
+<p>
+  This page runs the <a href="https://github.com/albhed/cippotto">cippotto</a> CHIP-8
+  emulator directly in your browser, compiled to WebAssembly. Pick a ROM, optionally
+  enable quirk flags, then press "Avvia" to start.
+</p>
+
+<form id="demo-form">
+  <label for="rom-select">ROM:</label>
+  <select id="rom-select" name="rom">
+    <option value="1-chip8-logo.ch8">1-chip8-logo.ch8</option>
+    <option value="3-corax+.ch8">3-corax+.ch8</option>
+    <option value="4-flags.ch8">4-flags.ch8</option>
+    <option value="5-quirks.ch8">5-quirks.ch8</option>
+    <option value="6-keypad.ch8">6-keypad.ch8</option>
+    <option value="ibm_logo.ch8">ibm_logo.ch8</option>
+    <option value="large.ch8">large.ch8</option>
+    <option value="ok.ch8">ok.ch8</option>
+  </select>
+
+  <fieldset>
+    <legend>Quirks</legend>
+    <label>
+      <input type="checkbox" id="quirk-shift-vy" value="--quirk-shift-vy">
+      --quirk-shift-vy
+    </label>
+    <label>
+      <input type="checkbox" id="quirk-wrap" value="--quirk-wrap">
+      --quirk-wrap
+    </label>
+    <label>
+      <input type="checkbox" id="quirk-jump-vx" value="--quirk-jump-vx">
+      --quirk-jump-vx
+    </label>
+    <label>
+      <input type="checkbox" id="quirk-fx55-increment" value="--quirk-fx55-increment">
+      --quirk-fx55-increment
+    </label>
+  </fieldset>
+
+  <button type="button" id="start-button">Avvia</button>
+</form>
+
+<canvas id="canvas" tabindex="-1" width="640" height="320"></canvas>
+
+<h2>Controls</h2>
+
+<p>The original CHIP-8 keypad is mapped to the left side of a QWERTY keyboard:</p>
+
+<pre>
+CHIP-8          Keyboard
+1 2 3 C         1 2 3 4
+4 5 6 D   -->   Q W E R
+7 8 9 E         A S D F
+A 0 B F         Z X C V
+</pre>
+
+<h2>Quirks</h2>
+
+<p>
+  CHIP-8 has a handful of instructions whose exact behavior was ambiguous or
+  diverged between the original COSMAC VIP interpreter and later ones (like
+  SUPER-CHIP). This emulator defaults to the modern/common behavior, and lets
+  you opt into the legacy behavior per-flag:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Flag</th><th>Affects</th><th>Behavior when enabled</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>--quirk-shift-vy</code></td>
+      <td><code>8XY6</code> / <code>8XYE</code> (shift)</td>
+      <td>Shifts <code>VY</code> instead of <code>VX</code> and stores the result in <code>VX</code></td>
+    </tr>
+    <tr>
+      <td><code>--quirk-wrap</code></td>
+      <td><code>DXYN</code> (draw sprite)</td>
+      <td>Sprites wrap around screen edges instead of being clipped</td>
+    </tr>
+    <tr>
+      <td><code>--quirk-jump-vx</code></td>
+      <td><code>BNNN</code> (jump with offset)</td>
+      <td>Uses <code>VX</code> as the offset register, i.e. <code>BXNN</code> behavior</td>
+    </tr>
+    <tr>
+      <td><code>--quirk-fx55-increment</code></td>
+      <td><code>FX55</code> / <code>FX65</code> (memory load/store)</td>
+      <td>Increments the <code>I</code> register as it reads/writes registers to memory</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  Devlog: <a href="https://github.com/albhed/cippotto/blob/main/docs/devlog.md">docs/devlog.md</a>
+</p>
+
+<script>
+document.getElementById('start-button').addEventListener('click', function () {
+  var romSelect = document.getElementById('rom-select');
+  var romPath = 'roms/' + romSelect.value;
+
+  var quirkIds = [
+    'quirk-shift-vy',
+    'quirk-wrap',
+    'quirk-jump-vx',
+    'quirk-fx55-increment'
+  ];
+
+  var args = [romPath];
+  quirkIds.forEach(function (id) {
+    var checkbox = document.getElementById(id);
+    if (checkbox.checked) {
+      args.push(checkbox.value);
+    }
+  });
+
+  var canvas = document.getElementById('canvas');
+
+  window.Module = {
+    arguments: args,
+    canvas: canvas
+  };
+
+  this.disabled = true;
+
+  var script = document.createElement('script');
+  script.src = 'chip8.js';
+  script.onload = function () {
+    canvas.focus();
+  };
+  document.body.appendChild(script);
+
+  canvas.focus();
+}, { once: true });
+</script>
+
+</body>
+</html>

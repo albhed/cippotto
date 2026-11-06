@@ -3,6 +3,10 @@ CC = gcc
 CFLAGS = -Wall $(shell pkg-config --cflags sdl2)
 LDFLAGS = $(shell pkg-config --libs sdl2)
 
+.PHONY: wasm
+EMCC = emcc
+EMFLAGS = -Wall -sUSE_SDL=2 --preload-file roms
+
 test:
 	@$(CC) -Wall test/chip8_test.c src/chip8.c src/quirks.c -o test/test_chip8
 	@cd test && ./test_chip8
@@ -25,6 +29,9 @@ test:
 
 build:
 	$(CC) $(CFLAGS) src/main.c src/loop.c src/chip8.c src/display.c src/input.c src/audio.c src/quirks.c -o chip8 $(LDFLAGS)
+
+wasm:
+	$(EMCC) $(EMFLAGS) src/main_web.c src/loop.c src/chip8.c src/display.c src/input.c src/audio.c src/quirks.c -o docs/chip8.js
 
 clean:
 	rm -f chip8 test/test_chip8 test/test_display test/test_input test/test_audio test/test_loop test/test_quirks

@@ -128,18 +128,23 @@ static void test_run_frame_with_display_wait_quirk_executes_at_most_one_dxyn_per
     free_chip8(chip8);
 }
 
-static void write_program_without_dxyn(Chip8* chip8) {
-    for (int i = 0; i < INSTRUCTIONS_PER_FRAME; i++) {
+static void write_non_dxyn_program_with_self_loop(Chip8* chip8, int n) {
+    for (int i = 0; i < n; i++) {
         chip8->memory[PC_START + i * 2] = 0x60;
         chip8->memory[PC_START + i * 2 + 1] = (uint8_t)i;
     }
+
+    uint16_t loop_address = PC_START + n * 2;
+    chip8->memory[loop_address] = 0x10 | ((loop_address >> 8) & 0x0F);
+    chip8->memory[loop_address + 1] = loop_address & 0xFF;
 }
 
-static void test_run_frame_display_wait_quirk_does_not_affect_non_dxyn_instructions(void) {
+static void test_run_frame_display_wait_quirk_runs_non_dxyn_instructions_beyond_old_budget(void) {
+    int n = INSTRUCTIONS_PER_FRAME + 5;
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
     chip8->quirks.quirk_display_wait = true;
-    write_program_without_dxyn(chip8);
+    write_non_dxyn_program_with_self_loop(chip8, n);
 
     Display* display = display_init();
     assert(display != NULL);
@@ -148,7 +153,72 @@ static void test_run_frame_display_wait_quirk_does_not_affect_non_dxyn_instructi
 
     bool running = run_frame(chip8, display, audio, 16);
     assert(running == true);
-    assert(chip8->PC == PC_START + INSTRUCTIONS_PER_FRAME * 2);
+    assert(chip8->PC == PC_START + n * 2);
+
+    audio_destroy(audio);
+    display_destroy(display);
+    free_chip8(chip8);
+}
+
+static void write_long_non_dxyn_program_then_dxyn(Chip8* chip8, int n) {
+    chip8->V[0x0] = 0;
+    chip8->V[0x1] = 0;
+    chip8->I = FONTSET_START;
+
+    for (int i = 0; i < n; i++) {
+        chip8->memory[PC_START + i * 2] = 0x60;
+        chip8->memory[PC_START + i * 2 + 1] = (uint8_t)i;
+    }
+
+    uint16_t dxyn_address = PC_START + n * 2;
+    chip8->memory[dxyn_address] = 0xD0;
+    chip8->memory[dxyn_address + 1] = 0x11;
+}
+
+static void test_run_frame_display_wait_quirk_completes_long_non_dxyn_logic_before_dxyn_in_one_frame(void) {
+    int n = 100;
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_display_wait = true;
+    write_long_non_dxyn_program_then_dxyn(chip8, n);
+
+    Display* display = display_init();
+    assert(display != NULL);
+    Audio* audio = audio_init();
+    assert(audio != NULL);
+
+    bool running = run_frame(chip8, display, audio, 16);
+    assert(running == true);
+    assert(chip8->PC == PC_START + (n + 1) * 2);
+    assert(chip8->sprite_drawn == true);
+
+    audio_destroy(audio);
+    display_destroy(display);
+    free_chip8(chip8);
+}
+
+static void write_program_filling_memory_without_dxyn(Chip8* chip8) {
+    int count = (MEM_SIZE - PC_START) / 2;
+    for (int i = 0; i < count; i++) {
+        chip8->memory[PC_START + i * 2] = 0x60;
+        chip8->memory[PC_START + i * 2 + 1] = (uint8_t)i;
+    }
+}
+
+static void test_run_frame_display_wait_quirk_caps_non_dxyn_instructions_when_no_dxyn_is_found(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    chip8->quirks.quirk_display_wait = true;
+    write_program_filling_memory_without_dxyn(chip8);
+
+    Display* display = display_init();
+    assert(display != NULL);
+    Audio* audio = audio_init();
+    assert(audio != NULL);
+
+    bool running = run_frame(chip8, display, audio, 16);
+    assert(running == true);
+    assert(chip8->PC == PC_START + INSTRUCTIONS_PER_FRAME_DISPLAY_WAIT_CAP * 2);
 
     audio_destroy(audio);
     display_destroy(display);
@@ -254,7 +324,9 @@ int main(void) {
     test_run_frame_executes_instructions_up_to_the_program_loop();
     test_run_frame_without_display_wait_quirk_executes_all_dxyn_in_one_frame();
     test_run_frame_with_display_wait_quirk_executes_at_most_one_dxyn_per_frame();
-    test_run_frame_display_wait_quirk_does_not_affect_non_dxyn_instructions();
+    test_run_frame_display_wait_quirk_runs_non_dxyn_instructions_beyond_old_budget();
+    test_run_frame_display_wait_quirk_completes_long_non_dxyn_logic_before_dxyn_in_one_frame();
+    test_run_frame_display_wait_quirk_caps_non_dxyn_instructions_when_no_dxyn_is_found();
     test_run_frame_display_wait_quirk_reaches_same_pc_and_display_with_more_frames();
     test_run_frame_updates_timers_at_real_60hz_rate();
 

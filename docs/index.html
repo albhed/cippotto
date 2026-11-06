@@ -2,37 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>cippotto — CHIP-8 emulator demo</title>
-<style>
-  body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-  canvas { background: #000; display: block; margin-top: 1rem; image-rendering: pixelated; }
-  table { border-collapse: collapse; margin: 0.5rem 0; }
-  table, th, td { border: 1px solid #999; padding: 0.3rem 0.6rem; }
-  pre { background: #f0f0f0; padding: 0.6rem; }
-  fieldset { margin: 1rem 0; }
-  label { display: block; margin: 0.2rem 0; }
-</style>
+<title>Cippotto — CHIP-8 emulator demo</title>
+<link rel="stylesheet" href="demo.css">
 </head>
 <body>
-<h1>cippotto — CHIP-8 emulator demo</h1>
+<h1>Cippotto — CHIP-8 emulator demo</h1>
 
 <p>
   This page runs the <a href="https://github.com/albhed/cippotto">cippotto</a> CHIP-8
-  emulator directly in your browser, compiled to WebAssembly. Pick a ROM, optionally
-  enable quirk flags, then press "Avvia" to start.
+  emulator directly in your browser, compiled to WebAssembly.<br/>
+  Pick a ROM, optionally
+  enable quirk flags, then press <strong>Run</strong> to start.
 </p>
 
 <form id="demo-form">
   <label for="rom-select">ROM:</label>
   <select id="rom-select" name="rom">
+    <option value="Pong.ch8">Pong.ch8</option>
     <option value="1-chip8-logo.ch8">1-chip8-logo.ch8</option>
     <option value="3-corax+.ch8">3-corax+.ch8</option>
     <option value="4-flags.ch8">4-flags.ch8</option>
     <option value="5-quirks.ch8">5-quirks.ch8</option>
     <option value="6-keypad.ch8">6-keypad.ch8</option>
     <option value="ibm_logo.ch8">ibm_logo.ch8</option>
-    <option value="large.ch8">large.ch8</option>
-    <option value="ok.ch8">ok.ch8</option>
   </select>
 
   <fieldset>
@@ -55,13 +47,11 @@
     </label>
   </fieldset>
 
-  <button type="button" id="start-button">Avvia</button>
+  <button type="button" id="start-button">Run</button>
+  <button type="button" id="reload-button" style="display:none;">⟲ Stop and refresh</button>
 </form>
 
 <canvas id="canvas" tabindex="-1" width="640" height="320"></canvas>
-<p>
-  <button type="button" id="reload-button" style="display:none;">⟲ Choose another ROM</button>
-</p>
 
 <h2>Controls</h2>
 
@@ -111,10 +101,6 @@ A 0 B F         Z X C V
     </tr>
   </tbody>
 </table>
-
-<p>
-  Devlog: <a href="https://github.com/albhed/cippotto/blob/main/docs/devlog.md">docs/devlog.md</a>
-</p>
 
 <script>
 document.getElementById('start-button').addEventListener('click', function () {

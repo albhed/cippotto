@@ -1,0 +1,67 @@
+:root {
+    --main-bg-color: #04151F;
+    --main-text-color: #16DB65;
+}
+
+body {
+    background-color: var(--main-bg-color);
+    color: var(--main-text-color);
+    font-family: "Lucida Console", "Courier New", monospace;
+    margin: auto;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+a {
+    color: #A3E7FC;
+}
+
+a:active {
+    color: #C00;
+}
+
+canvas {
+    background: #000;
+    display: inline-block;
+    margin-top: 1rem;
+    image-rendering: pixelated;
+}
+
+table {
+    display: inline-block;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+}
+
+table,
+th,
+td {
+    border: 1px solid #999;
+    padding: 0.3rem 0.6rem;
+}
+
+pre {
+    padding: 0.6rem;
+    color:#4361EE;
+    font-weight: bolder;
+    font-size: 16px;
+}
+
+
+form {
+    display: inline-block;
+    padding: 1rem;
+}
+
+fieldset {
+    margin: 1rem 0;
+    max-width: 340px;
+    text-align: justify;
+}
+fieldset label {
+    display: block;
+}
+
+label {
+    margin: 0.2rem 0;
+}

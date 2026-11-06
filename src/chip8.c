@@ -63,7 +63,10 @@ Chip8* init_chip8(void) {
         .quirk_wrap = false,
         .quirk_jump_vx = false,
         .quirk_fx55_increment = false,
+        .quirk_display_wait = false,
     };
+
+    chip8->sprite_drawn = false;
 
     return chip8;
 }
@@ -294,6 +297,8 @@ int execute(Chip8* chip, DecodedInstruction instruction) {
             chip->V[instruction.x] = (uint8_t)(rand() & instruction.nn);
             break;
         case 0xD: {
+            chip->sprite_drawn = true;
+
             uint8_t origin_x = chip->V[instruction.x];
             uint8_t origin_y = chip->V[instruction.y];
             uint8_t collision = 0;

@@ -48,6 +48,13 @@ void test_init_chip8_keys(void) {
     free_chip8(chip8);
 }
 
+void test_init_chip8_sprite_drawn(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->sprite_drawn == false);
+    free_chip8(chip8);
+}
+
 void test_init_chip8_memory_linked(void) {
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
@@ -1392,6 +1399,36 @@ void test_execute_DXYN_draws_font_zero(void) {
     free_chip8(chip8);
 }
 
+void test_execute_DXYN_sets_sprite_drawn_flag(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->sprite_drawn == false);
+
+    chip8->I = FONTSET_START;
+    chip8->V[0x0] = 10;
+    chip8->V[0x1] = 5;
+
+    DecodedInstruction instruction = decode(0xD015);
+    execute(chip8, instruction);
+
+    assert(chip8->sprite_drawn == true);
+
+    free_chip8(chip8);
+}
+
+void test_execute_non_DXYN_does_not_set_sprite_drawn_flag(void) {
+    Chip8* chip8 = init_chip8();
+    assert(chip8 != NULL);
+    assert(chip8->sprite_drawn == false);
+
+    DecodedInstruction instruction = decode(0x6A05);
+    execute(chip8, instruction);
+
+    assert(chip8->sprite_drawn == false);
+
+    free_chip8(chip8);
+}
+
 void test_execute_DXYN_xor_double_draw_clears_screen(void) {
     Chip8* chip8 = init_chip8();
     assert(chip8 != NULL);
@@ -2306,6 +2343,7 @@ int main(void) {
     test_init_chip8_index_register();
     test_init_chip8_timers();
     test_init_chip8_keys();
+    test_init_chip8_sprite_drawn();
     test_init_chip8_memory_linked();
     test_mem_size();
     test_pc();
@@ -2374,6 +2412,8 @@ int main(void) {
     test_execute_CXNN_partial_mask();
     test_execute_CXNN_zero_mask();
     test_execute_DXYN_draws_font_zero();
+    test_execute_DXYN_sets_sprite_drawn_flag();
+    test_execute_non_DXYN_does_not_set_sprite_drawn_flag();
     test_execute_DXYN_xor_double_draw_clears_screen();
     test_execute_DXYN_no_collision();
     test_execute_DXYN_collision();

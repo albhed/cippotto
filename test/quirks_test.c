@@ -107,6 +107,67 @@ static void test_parse_quirk_args_all_flags(void) {
     assert(strcmp(rom_path, "roms/game.ch8") == 0);
 }
 
+static void test_parse_quirk_args_display_wait_only(void) {
+    char* argv[] = {"chip8", "--quirk-display-wait", "roms/game.ch8"};
+    const char* rom_path = NULL;
+    QuirkConfig config = parse_quirk_args(3, argv, &rom_path);
+
+    assert(config.quirk_shift_vy == false);
+    assert(config.quirk_wrap == false);
+    assert(config.quirk_jump_vx == false);
+    assert(config.quirk_fx55_increment == false);
+    assert(config.quirk_display_wait == true);
+    assert(strcmp(rom_path, "roms/game.ch8") == 0);
+}
+
+static void test_parse_quirk_args_display_wait_combined_with_others(void) {
+    char* argv[] = {
+        "chip8",
+        "--quirk-display-wait",
+        "--quirk-wrap",
+        "--quirk-fx55-increment",
+        "roms/game.ch8"
+    };
+    const char* rom_path = NULL;
+    QuirkConfig config = parse_quirk_args(5, argv, &rom_path);
+
+    assert(config.quirk_shift_vy == false);
+    assert(config.quirk_wrap == true);
+    assert(config.quirk_jump_vx == false);
+    assert(config.quirk_fx55_increment == true);
+    assert(config.quirk_display_wait == true);
+    assert(strcmp(rom_path, "roms/game.ch8") == 0);
+}
+
+static void test_parse_quirk_args_all_five_flags(void) {
+    char* argv[] = {
+        "chip8",
+        "--quirk-shift-vy",
+        "--quirk-wrap",
+        "--quirk-jump-vx",
+        "--quirk-fx55-increment",
+        "--quirk-display-wait",
+        "roms/game.ch8"
+    };
+    const char* rom_path = NULL;
+    QuirkConfig config = parse_quirk_args(7, argv, &rom_path);
+
+    assert(config.quirk_shift_vy == true);
+    assert(config.quirk_wrap == true);
+    assert(config.quirk_jump_vx == true);
+    assert(config.quirk_fx55_increment == true);
+    assert(config.quirk_display_wait == true);
+    assert(strcmp(rom_path, "roms/game.ch8") == 0);
+}
+
+static void test_parse_quirk_args_defaults_include_display_wait_false(void) {
+    char* argv[] = {"chip8", "roms/game.ch8"};
+    const char* rom_path = NULL;
+    QuirkConfig config = parse_quirk_args(2, argv, &rom_path);
+
+    assert(config.quirk_display_wait == false);
+}
+
 static void test_parse_quirk_args_unknown_argument_treated_as_rom_path(void) {
     char* argv[] = {"chip8", "--unknown-flag"};
     const char* rom_path = NULL;
@@ -159,6 +220,12 @@ static void test_quirk_help_text_contains_all_quirk_flag_names(void) {
     assert(strstr(text, "--quirk-fx55-increment") != NULL);
 }
 
+static void test_quirk_help_text_contains_display_wait_flag_name(void) {
+    const char* text = quirk_help_text();
+
+    assert(strstr(text, "--quirk-display-wait") != NULL);
+}
+
 static void test_quirk_help_text_mentions_rom_path(void) {
     const char* text = quirk_help_text();
 
@@ -175,6 +242,10 @@ int main(void) {
     test_parse_quirk_args_fx55_increment_only();
     test_parse_quirk_args_multiple_flags();
     test_parse_quirk_args_all_flags();
+    test_parse_quirk_args_display_wait_only();
+    test_parse_quirk_args_display_wait_combined_with_others();
+    test_parse_quirk_args_all_five_flags();
+    test_parse_quirk_args_defaults_include_display_wait_false();
     test_parse_quirk_args_unknown_argument_treated_as_rom_path();
     test_quirk_help_requested_absent();
     test_quirk_help_requested_no_args_at_all();
@@ -183,6 +254,7 @@ int main(void) {
     test_quirk_help_requested_after_other_flags();
     test_quirk_help_requested_before_other_flags();
     test_quirk_help_text_contains_all_quirk_flag_names();
+    test_quirk_help_text_contains_display_wait_flag_name();
     test_quirk_help_text_mentions_rom_path();
     printf("All quirks tests passed!\n");
     return 0;

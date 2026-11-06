@@ -45,6 +45,10 @@
       <input type="checkbox" id="quirk-fx55-increment" value="--quirk-fx55-increment">
       --quirk-fx55-increment
     </label>
+    <label>
+      <input type="checkbox" id="quirk-display-wait" value="--quirk-display-wait">
+      --quirk-display-wait
+    </label>
   </fieldset>
 
   <button type="button" id="start-button">Run</button>
@@ -99,6 +103,11 @@ A 0 B F         Z X C V
       <td><code>FX55</code> / <code>FX65</code> (memory load/store)</td>
       <td>Increments the <code>I</code> register as it reads/writes registers to memory</td>
     </tr>
+    <tr>
+      <td><code>--quirk-display-wait</code></td>
+      <td><code>DXYN</code> (draw sprite)</td>
+      <td>Limits sprite drawing to one <code>DXYN</code> per visual frame, like the original COSMAC VIP</td>
+    </tr>
   </tbody>
 </table>
 
@@ -111,7 +120,8 @@ document.getElementById('start-button').addEventListener('click', function () {
     'quirk-shift-vy',
     'quirk-wrap',
     'quirk-jump-vx',
-    'quirk-fx55-increment'
+    'quirk-fx55-increment',
+    'quirk-display-wait'
   ];
 
   var args = [romPath];

@@ -8,6 +8,7 @@ QuirkConfig parse_quirk_args(int argc, char** argv, const char** rom_path) {
         .quirk_wrap = false,
         .quirk_jump_vx = false,
         .quirk_fx55_increment = false,
+        .quirk_display_wait = false,
     };
 
     *rom_path = NULL;
@@ -21,6 +22,8 @@ QuirkConfig parse_quirk_args(int argc, char** argv, const char** rom_path) {
             config.quirk_jump_vx = true;
         } else if (strcmp(argv[i], "--quirk-fx55-increment") == 0) {
             config.quirk_fx55_increment = true;
+        } else if (strcmp(argv[i], "--quirk-display-wait") == 0) {
+            config.quirk_display_wait = true;
         } else {
             *rom_path = argv[i];
         }
@@ -48,6 +51,7 @@ const char* quirk_help_text(void) {
         "  --quirk-wrap             Wrap sprites around screen edges instead of clipping\n"
         "  --quirk-jump-vx          Use VX as offset register for BNNN jump (BXNN behavior)\n"
         "  --quirk-fx55-increment   Increment I register after FX55/FX65 memory operations\n"
+        "  --quirk-display-wait     Limit DXYN to one sprite draw per frame\n"
         "\n"
         "Arguments:\n"
         "  <rom_path>               Path to the CHIP-8 ROM file to load\n";

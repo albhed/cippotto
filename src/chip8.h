@@ -28,6 +28,7 @@ typedef struct {
     uint8_t sound_timer;
     uint32_t timer_accumulator_us;
     QuirkConfig quirks;
+    bool sprite_drawn;
 } Chip8;
 
 typedef struct {
